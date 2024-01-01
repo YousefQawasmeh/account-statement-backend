@@ -2,9 +2,7 @@ import { DataSource } from 'typeorm';
 import { User } from './entity/User.js';
 import { Record } from './entity/Record.js';
 import { RecordType } from './entity/RecordType.js';
-import { UserType } from './entity/userType.js';
-import 'dotenv/config'
-
+import { UserType } from './entity/UserType.js';
 
 const dataSource = new DataSource({
     type: 'postgres',

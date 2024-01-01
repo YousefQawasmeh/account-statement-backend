@@ -9,7 +9,7 @@ import { User } from "./User.js";
 
 @Entity()
 export class UserType extends BaseEntity {
-    @PrimaryColumn()
+    @PrimaryColumn("int2")
     id!: number;
 
     @OneToMany(() => User, (user: User) => user.type)

@@ -34,8 +34,8 @@ export class Record extends BaseEntity {
     )
     type!: string;
 
-    @Column({ length: 50, })
-    title!: string;
+    // @Column({ length: 50, })
+    // title!: string;
 
     @Column({ type: 'timestamp', default: () => "CURRENT_TIMESTAMP()" })
     date!: Date;
@@ -60,5 +60,11 @@ export class Record extends BaseEntity {
 
     @Column({ default: false })
     isDeleted!: boolean;
+
+    @Column({ default: 0 })
+    amount!: number;
+
+    @Column({ nullable: true, length: 256 })
+    notes!: string;
 
 }

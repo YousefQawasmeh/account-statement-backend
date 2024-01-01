@@ -1,6 +1,6 @@
 import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Record } from "./Record.js";
-import { UserType } from "./userType.js";
+import { UserType } from "./UserType.js";
 
 
 @Entity()
@@ -37,7 +37,7 @@ export class User extends BaseEntity {
 
     @ManyToOne(() => UserType, type => type.users,
         {
-            eager: false,
+            eager: true,
             onDelete: 'CASCADE', // SET NULL// RESTRICT
             onUpdate: 'CASCADE'
         }
