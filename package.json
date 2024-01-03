@@ -4,9 +4,12 @@
     "description": "",
     "main": "index.js",
     "scripts": {
+        "prestart": "npm run build",
+        "build": "tsc",
         "build-tsc": "tsc -w",
         "run-watch": "nodemon ./dist",
-        "dev": "concurrently \"npm run build-tsc\"  \"npm run run-watch\""
+        "dev": "concurrently \"npm run build-tsc\"  \"npm run run-watch\"",
+        "start": "node dist index.js"
     },
     "author": "",
     "license": "ISC",
