@@ -29,7 +29,7 @@ export class User extends BaseEntity {
     @Column({ default: 0 })
     limit!: number;
 
-    @Column({ default: 0 })
+    @Column( "float" , { default: 0 })
     total!: number;
 
     @OneToMany(() => Record, (record: Record) => record.user)

@@ -61,7 +61,7 @@ export class Record extends BaseEntity {
     @Column({ default: false })
     isDeleted!: boolean;
 
-    @Column({ default: 0 })
+    @Column( "float" ,{ default: 0 })
     amount!: number;
 
     @Column({ nullable: true, length: 256 })
