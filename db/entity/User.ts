@@ -42,6 +42,6 @@ export class User extends BaseEntity {
             onUpdate: 'CASCADE'
         }
     )
-    type!: number;
+    type!: UserType;
 
 }

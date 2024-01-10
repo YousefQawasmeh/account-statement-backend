@@ -1,18 +1,28 @@
 import express from 'express';
 import { User } from '../db/entity/User.js';
-import db from '../db/index.js';
-
+import { createUser, getNewCardId, getAllUsers, getUser, updateUser } from '../controlers/index.js'
 const router = express.Router();
 
 router.get('/', async (req, res) => {
-    const users = await User.find();
-    res.send(users);
+  const users = await getAllUsers();
+  res.send(users);
+});
+
+router.get('/newCardId/:cardType', async (req, res) => {
+  try {
+    const newCardId = await getNewCardId(+req.params.cardType);
+    res.send({ cardId: newCardId });
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).send("Something went wrong, " + error);
+  }
 });
 
 router.get('/:id', async (req, res) => {
   try {
     const id = req.params.id;
-    const user = await User.findOne({ where: { id }, relations: [ 'records', 'type'] });
+    const user = await getUser({ id });
     res.send(user);
   } catch (error) {
     res.status(404).send("User not found!")
@@ -22,7 +32,7 @@ router.get('/:id', async (req, res) => {
 router.get('/:cardId', async (req, res) => {
   try {
     const cardId = Number(req.params.cardId);
-    const user = await User.findOne({ where: { cardId }, relations: [ 'records', 'type'] });
+    const user = await getUser({ cardId });
     res.send(user);
   } catch (error) {
     res.status(404).send("User not found!")
@@ -31,24 +41,10 @@ router.get('/:cardId', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const user = new User();
-    user.name = req.body.name;
-    user.phone = req.body.phone;
-    user.notes = req.body.notes;
-    user.cardId = req.body.cardId;
-    user.active = !!req.body.active;
-    user.limit = req.body.limit;
-    user.type = req.body.type;
-
-    db.dataSource.transaction(async (transactionManager) => {
-      await transactionManager.save(user);
-    }).then(() => {
-        res.status(201).send(user);
-    }).catch(error => {
-      res.status(500).send("Something went wrong: " + error);
-    });
-
-  } catch (error) {
+    const newUser = await createUser(req.body);
+    res.status(201).send(newUser);
+  }
+  catch (error) {
     console.error(error);
     res.status(500).send("Something went wrong, " + error);
   }
@@ -56,36 +52,36 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   const id = req.params.id;
-  const user = await User.findOneBy({ id });
-  if (user) {
-    if(req.body.name !== undefined) user.name = req.body.name;
-    if(req.body.phone !== undefined) user.phone = req.body.phone;
-    if(req.body.notes !== undefined) user.notes = req.body.notes;
-    if(req.body.active !== undefined) user.active = req.body.active;
-    if(req.body.limit !== undefined) user.limit = req.body.limit;
-    if(req.body.type !== undefined) user.type = req.body.type; //await UserType.findOneBy({ id: req.body.type });
-    await user.save();
-    res.status(200).send(user);
-    // Object.entries(req.body).forEach(([key, value]) => {
-    //     if (key === 'id') {
-    //       return;
-    //     }
-    //   user[key] = value;
-    // })
+  try {
+    const updatedUser = await updateUser({ id }, req.body);
+    if (updatedUser) {
+      res.status(200).send(updateUser);
+    }
+    else {
+      res.status(404).send("User not found!");
+    }
   }
+  catch (error) {
+    console.error(error);
+    res.status(500).send("Something went wrong, " + error);
+  }
+
 });
+
 router.put('/:cardId', async (req, res) => {
   const cardId = Number(req.params.cardId);
-  const user = await User.findOneBy({ cardId });
-  if (user) {
-    if(req.body.name !== undefined) user.name = req.body.name;
-    if(req.body.phone !== undefined) user.phone = req.body.phone;
-    if(req.body.notes !== undefined) user.notes = req.body.notes;
-    if(req.body.active !== undefined) user.active = req.body.active;
-    if(req.body.limit !== undefined) user.limit = req.body.limit;
-    if(req.body.type !== undefined) user.type = req.body.type;
-    await user.save();
-    res.status(200).send(user);
+  try {
+    const updatedUser = await updateUser({ cardId }, req.body);
+    if (updatedUser) {
+      res.status(200).send(updatedUser);
+    }
+    else {
+      res.status(404).send("User not found!");
+    }
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).send("Something went wrong, " + error);
   }
 });
 
