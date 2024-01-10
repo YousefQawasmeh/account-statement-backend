@@ -5,7 +5,7 @@ export const getNewCardId = async (cardType: number) => {
     type: { id: cardType }
   });
 
-  return (maxCardId && maxCardId > minCardId ? maxCardId  : minCardId)+ 1;
+  return (maxCardId && maxCardId > minCardId ? maxCardId : minCardId) + 1;
 }
 
 export const getAllUsers = async () => {
@@ -20,7 +20,6 @@ export const getUser = async (findOneBy: { cardId: number } | { id: string }) =>
 
 export const updateUser = async (findOneBy: { cardId: number } | { id: string }, data: any) => {
   try {
-
     const user = await User.findOneBy(findOneBy);
     if (user) {
       if (data.name !== undefined) user.name = data.name;
@@ -28,7 +27,10 @@ export const updateUser = async (findOneBy: { cardId: number } | { id: string },
       if (data.notes !== undefined) user.notes = data.notes;
       if (data.active !== undefined) user.active = data.active;
       if (data.limit !== undefined) user.limit = data.limit;
-      if (data.type !== undefined) user.type = data.type;
+      // if (data.type !== undefined) {
+      //   const userType = await UserType.findOneBy({ id: data.type });
+      //   user.type = userType
+      // };
       return user.save();
     }
   }

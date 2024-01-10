@@ -55,7 +55,7 @@ router.put('/:id', async (req, res) => {
   try {
     const updatedUser = await updateUser({ id }, req.body);
     if (updatedUser) {
-      res.status(200).send(updateUser);
+      res.status(200).send(updatedUser);
     }
     else {
       res.status(404).send("User not found!");
