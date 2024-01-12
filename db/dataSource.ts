@@ -8,8 +8,9 @@ const dataSource = new DataSource({
     type: 'postgres',
     url: process.env.DATABASE_URL,
     entities: [User, Record, RecordType, UserType],
-    synchronize: true,
+    synchronize: process.env.NODE_ENV !== 'production',
     logging: true,
+    // logging: process.env.NODE_ENV === 'development',
     database: 'account-statement',
     migrations: ['./**/migration/*.ts'],
 

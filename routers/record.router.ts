@@ -2,11 +2,12 @@ import express from 'express';
 import { Record } from '../db/entity/Record.js';
 import db from '../db/index.js';
 import { User } from '../db/entity/User.js';
+import { RecordType } from '../db/entity/RecordType.js';
 
 const router = express.Router();
 
 router.get('/', async (req, res) => {
-  const records = await Record.find();
+  const records = await Record.find( { relations: ['user', 'type'] } );
   res.send(records);
 });
 
@@ -23,7 +24,7 @@ router.get('/:id', async (req, res) => {
 router.get('/user/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
-    const records = await Record.find({ where: { user: userId }, relations: ['type'] });
+    const records = await Record.find({ where: { user: {id: userId} }, relations: ['type'] });
     res.send(records);
   } catch (error) {
     res.status(404).send("User not found!")
@@ -33,13 +34,14 @@ router.get('/user/:userId', async (req, res) => {
 router.get('/card/:cardId', async (req, res) => {
   try {
     const cardId = Number(req.params.cardId);
-    const user = await User.findOne({ where: { cardId } });
-    // const user = await User.findOne({ where: { cardId }, relations: [ 'records', 'type'] });
-    if (!user) {
-      res.status(404).send("User not found!")
-      return;
-    }
-    const records = await Record.find({ where: { user: user.id }, relations: ['type'] });
+    // const user = await User.findOne({ where: { cardId } });
+    // // const user = await User.findOne({ where: { cardId }, relations: [ 'records', 'type'] });
+    // if (!user) {
+    //   res.status(404).send("User not found!")
+    //   return;
+    // }
+    // const records = await Record.find({ where: { user: {cardId: user.cardId} }, relations: ['type'] });
+    const records = await Record.find({ where: { user: {cardId: cardId} }, relations: ['type'] });
     // const records = await Record.find({ where: { user: user.id }, relations: [ 'users', 'type'] });
     res.send(records);
   } catch (error) {
@@ -49,22 +51,28 @@ router.get('/card/:cardId', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
+    const user = await User.findOneBy({ id: req.body.user });
+    const recordType = await RecordType.findOneBy({ id: +req.body.type });
+    
+    if (!user) {
+      res.status(404).send("User not found!")
+      return;
+    }
+    if(!recordType) {
+      res.status(404).send("RecordType not found!")
+      return;
+    }
     const record = new Record();
     record.amount = req.body.amount;
     record.date = req.body.date;
     record.notes = req.body.notes;
-    record.type = req.body.type;
-    record.user = req.body.user;
+    record.type = recordType;
+    // record.type = req.body.type;
+    record.user = user;
 
     db.dataSource.transaction(async (transactionManager) => {
       await transactionManager.save(record);
     }).then(async () => {
-      const id = req.body.user;
-      const user = await User.findOneBy({ id });
-      if (user) {
-        user.total = user.total + req.body.amount;
-        await user.save();
-      }
       res.status(201).send(record);
     }).catch(error => {
       res.status(500).send("Something went wrong: " + error);
