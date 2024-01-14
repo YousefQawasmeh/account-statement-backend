@@ -33,14 +33,11 @@ export class Record extends BaseEntity {
     @CreateDateColumn({ default: () => 'CURRENT_TIMESTAMP()' })
     createdAt!: Date;
 
-    @UpdateDateColumn({ default: () => 'CURRENT_TIMESTAMP()' })
+    @UpdateDateColumn({ nullable: true, default: null })
     updatedAt!: Date;
 
     @DeleteDateColumn({ nullable: true, default: null })
     deletedAt!: Date;
-
-    @Column({ default: false })
-    isDeleted!: boolean;
 
     @Column("float", { default: 0 })
     amount!: number;
@@ -61,7 +58,7 @@ export class Record extends BaseEntity {
     @BeforeUpdate()
     async beforeUpdate() {
         try {
-            const originalRecord = await Record.findOne({ where: { id: this.id } });
+            const originalRecord = await Record.findOne({ where: { id: this.id }, relations: ['user'] });
             if (originalRecord) {
                 await this.updateTotal(originalRecord);
             }
@@ -72,11 +69,37 @@ export class Record extends BaseEntity {
     }
 
     private async updateTotal(previousRecord?: Record) {
-        const recordToUpdate: Record = previousRecord || this;
-        const user = await User.findOne({ where: { id: recordToUpdate.user.id } });
-        if (user) {
-            user.total = user.total - (previousRecord?.amount || 0) + recordToUpdate.amount;
+        const saveNewUserTotal = async (user: User, total: number) => {
+            user.total = total;
             await user.save();
         }
+
+        const recordToUpdate: Record = previousRecord || this;
+        const user = await User.findOne({ where: { id: recordToUpdate.user.id } });
+        if (!user) {
+            throw ("user not found");
+        }
+
+        if(!previousRecord) {
+            saveNewUserTotal(user, user.total + +this.amount);
+            return;
+        }
+
+        if(previousRecord.deletedAt !== null) {
+            throw ("it's not accepted to update a deleted record");
+        }
+
+        if(this.deletedAt !== null) {
+            this.deletedAt = new Date();
+            saveNewUserTotal(user, user.total - previousRecord.amount);
+            return;
+        }
+
+        if (previousRecord.amount !== +this.amount){
+            this.updatedAt = new Date();
+            saveNewUserTotal(user, user.total - (previousRecord?.amount) + (+this.amount));
+            return;
+        }
     }
+    
 }
