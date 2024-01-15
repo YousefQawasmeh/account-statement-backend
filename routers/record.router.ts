@@ -3,22 +3,62 @@ import { Record } from '../db/entity/Record.js';
 import db from '../db/index.js';
 import { User } from '../db/entity/User.js';
 import { RecordType } from '../db/entity/RecordType.js';
-import { IsNull, Not } from 'typeorm';
+import { Between, IsNull, Not } from 'typeorm';
 
 const router = express.Router();
 
+const filtersKeys: { [key: string]: string | number } = {
+  amount: 'amount',
+  date: 'date',
+  notes: 'notes',
+  type: 'type',
+  userId: 'user',
+  cardId: 'user',
+  active: 'active',
+  limit: 'limit'
+}
+
+const getFilters = async (req: any) => {
+  const filters = await Object.keys(req.query).reduce(async (acc: any, key: string) => {
+    if (filtersKeys[key]) {
+      const DBKey = filtersKeys[key];
+      let value: any = req.query[key];
+      if (DBKey === 'user') {
+        const user = await User.findOneBy({ [key]: req.query[key] });
+        value = user
+      }
+
+      if (DBKey === 'type') {
+        const type = await RecordType.findOneBy({ [key]: +req.query[key] });
+        value = type
+      }
+
+      if (DBKey === 'date' && req.query[key].from && req.query[key].to) {
+        value = Between(req.query[key].from, req.query[key].to)
+      }
+
+      acc[DBKey] = value;
+    }
+    return acc
+  }, {});
+  return filters
+}
+
 router.get('/', async (req, res) => {
-  const records = await Record.find( { relations: ['user', 'type'] } );
+  const filters = await getFilters(req);
+  const records = await Record.find( {where: {...filters}, relations: ['user', 'type'] } );
   res.send(records);
 });
 
 router.get('/all', async (req, res) => {
-  const records = await Record.find({withDeleted: true, relations: ['user', 'type'] } );
+  const filters = await getFilters(req);
+  const records = await Record.find({where: {...filters,}, withDeleted: true, relations: ['user', 'type'] } );
   res.send(records);
 });
 
 router.get('/deleted', async (req, res) => {
-  const records = await Record.find({withDeleted: true, relations: ['user', 'type'], where: {deletedAt: Not(IsNull())}});
+  const filters = await getFilters(req);
+  const records = await Record.find({withDeleted: true, relations: ['user', 'type'], where: {deletedAt: Not(IsNull()), ...filters} } );
   res.send(records);
 });
 
