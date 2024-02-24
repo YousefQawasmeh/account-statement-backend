@@ -34,7 +34,9 @@ const getFilters = async (req: any) => {
       }
 
       if (DBKey === 'date' && req.query[key].from && req.query[key].to) {
-        value = Between(req.query[key].from, req.query[key].to)
+        const fromDate = new Date(new Date(req.query[key].from).setHours(0, 0, 0, 0));
+        const toDate = new Date(new Date(req.query[key].to).setHours(23, 59, 59, 999));
+        value = Between(fromDate, toDate)
       }
 
       acc[DBKey] = value;
@@ -46,7 +48,7 @@ const getFilters = async (req: any) => {
 
 router.get('/', async (req, res) => {
   const filters = await getFilters(req);
-  const records = await Record.find( {where: {...filters}, relations: ['user', 'type'] } );
+  const records = await Record.find({ where: { ...filters }, order: { date: 'ASC', createdAt: 'ASC' }, relations: ['user', 'type'] });
   res.send(records);
 });
 
