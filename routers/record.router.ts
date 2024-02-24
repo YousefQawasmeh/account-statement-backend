@@ -19,7 +19,8 @@ const filtersKeys: { [key: string]: string | number } = {
 }
 
 const getFilters = async (req: any) => {
-  const filters = await Object.keys(req.query).reduce(async (acc: any, key: string) => {
+  const filters: any = {};
+  for (const key of Object.keys(req.query)) {
     if (filtersKeys[key]) {
       const DBKey = filtersKeys[key];
       let value: any = req.query[key];
@@ -39,11 +40,13 @@ const getFilters = async (req: any) => {
         value = Between(fromDate, toDate)
       }
 
-      acc[DBKey] = value;
+      filters[DBKey] = value;
     }
-    return acc
-  }, {});
-  return filters
+    }
+  return filters;
+}
+
+}
 }
 
 router.get('/', async (req, res) => {
