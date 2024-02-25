@@ -46,8 +46,8 @@ const getFilters = async (req: any) => {
   return filters;
 }
 
-}
-}
+
+
 
 router.get('/', async (req, res) => {
   const filters = await getFilters(req);
