@@ -9,6 +9,7 @@ import recordTypeRouter from './routers/recordType.router.js';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
+import whatsappClient from './services/sendWhatsAppMsg.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -53,4 +54,5 @@ app.get('*', function (req, res) {
 app.listen(port, () => {
   console.log(`The app is listening on port ${port}`);
   db.initialize();
+  whatsappClient.initialize();
 });
