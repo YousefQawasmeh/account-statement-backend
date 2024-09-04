@@ -54,7 +54,7 @@ const sendWhatsAppMsg = async (user: User, amount: number) => {
   try {
     // const numbers = ["972566252561", "972569252661", "972599223379", "972569758016", "970566252561", "970569252661", "970599223379", "970569758016", "972569112002", "972599252561"]
       // const userNo = numbers.find(x => x.includes(user.phone))
-      const userNo = user.phone?.length >= 9 && user.phone.length !== 12 ? "972" + user.phone.slice(-9) : null 
+      const userNo = user.phone?.length >= 9 && user.phone.length !== 12 ? ("972" + user.phone.slice(-9)) : user.phone 
       // if(user.type.id === 1 && "+972566252561 +972569252661 +972599223379 +972569758016 +970566252561 +970569252661 +970599223379 +970569758016".includes(user.phone)){
       // if(user.type.id === 1 && numbers.includes(user.phone)){
       if (user.type.id === 1 && userNo) {
