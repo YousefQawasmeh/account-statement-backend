@@ -7,6 +7,7 @@ import recordRouter from './routers/record.router.js';
 import userTypeRouter from './routers/userType.router.js';
 import recordTypeRouter from './routers/recordType.router.js';
 import cors from 'cors'; 
+import Axios from 'axios';
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -30,4 +31,7 @@ app.use('/api/recordtypes', recordTypeRouter);
 app.listen(port, () => {
   console.log(`The app is listening on port ${port}`);
   db.initialize();
+  Axios.get(`${process.env.WHATSAPP_URL}/session/start/${process.env.WHATSAPP_SESSION_ID}`).then((response) => {
+    console.log(response.data);
+  })
 });
