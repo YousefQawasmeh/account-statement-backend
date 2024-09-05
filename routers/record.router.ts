@@ -1,10 +1,10 @@
 import express from 'express';
+import Axios from 'axios';
 import { Record } from '../db/entity/Record.js';
 import db from '../db/index.js';
 import { User } from '../db/entity/User.js';
 import { RecordType } from '../db/entity/RecordType.js';
 import { Between, IsNull, Not } from 'typeorm';
-import whatsappClient from '../services/sendWhatsAppMsg.js';
 const router = express.Router();
 
 const filtersKeys: { [key: string]: string | number } = {
@@ -49,14 +49,27 @@ const getFilters = async (req: any) => {
   return filters;
 }
 
+const sendWhatsAppMsg_API = async (phone: number, msg: string) => {
+  const WHATSAPP_SESSION_ID = process.env.WHATSAPP_SESSION_ID;
+  const WHATSAPP_URL = process.env.WHATSAPP_URL;
+  const sendMsg_URL = `${WHATSAPP_URL}/client/sendMessage/${WHATSAPP_SESSION_ID}`
+  const getNumberId = `${WHATSAPP_URL}/client/getNumberId/${WHATSAPP_SESSION_ID}`
+  const chatId = await Axios.post(getNumberId, {
+    number: phone
+  })
+  
+  const data = {
+    chatId,
+    contentType: "string",
+    content:msg
+  }
+
+  const response = await Axios.post(sendMsg_URL, data)  
+}
 
 const sendWhatsAppMsg = async (user: User, amount: number) => {
   try {
-    // const numbers = ["972566252561", "972569252661", "972599223379", "972569758016", "970566252561", "970569252661", "970599223379", "970569758016", "972569112002", "972599252561"]
-      // const userNo = numbers.find(x => x.includes(user.phone))
       const userNo = user.phone?.length >= 9 && user.phone.length !== 12 ? ("972" + user.phone.slice(-9)) : user.phone 
-      // if(user.type.id === 1 && "+972566252561 +972569252661 +972599223379 +972569758016 +970566252561 +970569252661 +970599223379 +970569758016".includes(user.phone)){
-      // if(user.type.id === 1 && numbers.includes(user.phone)){
       if (user.type.id === 1 && userNo) {
         const newTotal = user.total + amount
         const total = (newTotal > 0 ? "عليك: " : "لك: ") + newTotal
@@ -64,17 +77,11 @@ const sendWhatsAppMsg = async (user: User, amount: number) => {
           `لقد قمت بعملية شراء بمبلغ ${amount} وأصبح رصيد حسابك: ${total}`,
           `شكرا لتسديدك مبلغ ${amount} لقد أصبح رصيدك ${total}`
         ]
-        const whatsappUser = await whatsappClient.getNumberId(userNo)
-        const chatId = whatsappUser._serialized;
-        whatsappClient.sendMessage(chatId, amount > 0 ? msgs[0] : msgs[1]);
+        sendWhatsAppMsg_API(+userNo, amount > 0 ? msgs[0] : msgs[1]);
       }
       else {
-        const whatsappUser = await whatsappClient.getNumberId("972566252561")
-        const chatId = whatsappUser._serialized;
-        whatsappClient.sendMessage(chatId, `did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
-
+        sendWhatsAppMsg_API(+userNo, `did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
       }
-    // res.send(msg);
 
   } catch (error) {
     console.log(error);
