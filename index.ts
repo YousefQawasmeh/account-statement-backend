@@ -27,11 +27,23 @@ app.use('/api/recordtypes', recordTypeRouter);
 // app.get('*', function (req, res) {
 //   res.sendFile(path.join(__dirname, '../dist copy', 'index.html'));
 // });
+const whatsappInit = () => {
+  Axios.get(`${process.env.WHATSAPP_URL}/session/status/${process.env.WHATSAPP_SESSION_ID}`)
+  .then((res)=>{
+    if(res.data.state !== "CONNECTED"){
+      Axios.get(`${process.env.WHATSAPP_URL}/session/start/${process.env.WHATSAPP_SESSION_ID}`)
+      .then((response) => {
+          console.log(response.data);
+        })
+      }
+  })
+  .catch((error) => {
+    console.error(error.response.data);
+  })
+}
 
 app.listen(port, () => {
   console.log(`The app is listening on port ${port}`);
   db.initialize();
-  Axios.get(`${process.env.WHATSAPP_URL}/session/start/${process.env.WHATSAPP_SESSION_ID}`).then((response) => {
-    console.log(response.data);
-  })
+  whatsappInit();
 });

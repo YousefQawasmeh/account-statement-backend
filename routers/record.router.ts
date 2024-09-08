@@ -54,12 +54,12 @@ const sendWhatsAppMsg_API = async (phone: number, msg: string) => {
   const WHATSAPP_URL = process.env.WHATSAPP_URL;
   const sendMsg_URL = `${WHATSAPP_URL}/client/sendMessage/${WHATSAPP_SESSION_ID}`
   const getNumberId = `${WHATSAPP_URL}/client/getNumberId/${WHATSAPP_SESSION_ID}`
-  const chatId = await Axios.post(getNumberId, {
-    number: phone
+  const chatData = await Axios.post(getNumberId, {
+    number: phone+""
   })
-  
+
   const data = {
-    chatId,
+    chatId:chatData.data?.result?._serialized,
     contentType: "string",
     content:msg
   }
@@ -77,10 +77,10 @@ const sendWhatsAppMsg = async (user: User, amount: number) => {
           `لقد قمت بعملية شراء بمبلغ ${amount} وأصبح رصيد حسابك: ${total}`,
           `شكرا لتسديدك مبلغ ${amount} لقد أصبح رصيدك ${total}`
         ]
-        sendWhatsAppMsg_API(+userNo, amount > 0 ? msgs[0] : msgs[1]);
+        await sendWhatsAppMsg_API(+userNo, amount > 0 ? msgs[0] : msgs[1]);
       }
       else {
-        sendWhatsAppMsg_API(+userNo, `did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
+        await sendWhatsAppMsg_API(+userNo, `did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
       }
 
   } catch (error) {
