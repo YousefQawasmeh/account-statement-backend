@@ -38,7 +38,7 @@ const whatsappInit = () => {
       }
   })
   .catch((error) => {
-    console.error(error.response.data);
+    console.error("whatsapp init error", error.response?.data);
   })
 }
 
