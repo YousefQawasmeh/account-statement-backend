@@ -45,5 +45,5 @@ const whatsappInit = () => {
 app.listen(port, () => {
   console.log(`The app is listening on port ${port}`);
   db.initialize();
-  whatsappInit();
+  // whatsappInit();
 });
