@@ -67,24 +67,43 @@ const sendWhatsAppMsg_API = async (phone: number, msg: string) => {
   const response = await Axios.post(sendMsg_URL, data)  
 }
 
-const sendWhatsAppMsg = async (user: User, amount: number) => {
+const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: number, notes: string, date: Date }) => {
+  const userNo = user.phone?.length >= 9 && user.phone.length !== 12 ? ("972" + user.phone.slice(-9)) : user.phone
+
+  const extractNameInBrackets = (str: string) => {
+    const match = str.match(/\(([^)]+)\)/);
+    return match ? match[1] : '';
+  }
+  const name = extractNameInBrackets(user.name)
+  const displayName = (amount >=0 && name) ? `عزيزي ${name}، ` : `${name}،`;
+  notes = notes ? ` (لـ ${notes})` : ""
+  const dateStr = new Date(date).toLocaleDateString("en-GB", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  })
   try {
-      const userNo = user.phone?.length >= 9 && user.phone.length !== 12 ? ("972" + user.phone.slice(-9)) : user.phone 
-      if (user.type.id === 1 && userNo) {
-        const newTotal = user.total + amount
-        const total = (newTotal > 0 ? "عليك: " : "لك: ") + newTotal
-        const msgs = [
-          `لقد قمت بعملية شراء بمبلغ ${amount} وأصبح رصيد حسابك: ${total}`,
-          `شكرا لتسديدك مبلغ ${amount} لقد أصبح رصيدك ${total}`
-        ]
-        await sendWhatsAppMsg_API(+userNo, amount > 0 ? msgs[0] : msgs[1]);
-      }
-      else {
-        await sendWhatsAppMsg_API(+userNo, `did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
-      }
+    if (user.type.id === 1 && userNo) {
+      const newTotal = user.total + amount
+      const total = (newTotal >= 0 ? "عليكم: " : "لكم: ") + (newTotal >= 0 ? newTotal : newTotal * -1)
+      const msgs = [
+        `${displayName}تم تسجيل شراءك${notes} بمبلغ ${amount} شيكل من سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدكم الحالي: ${total} شيكل.`,
+        `شكرًا لك، ${displayName} على تسديدك مبلغ ${amount} شيكل لحسابكم في سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدك الحالي: ${total} شيكل.`
+      ]
+      await sendWhatsAppMsg_API(+userNo, amount >= 0 ? msgs[0] : msgs[1]);
+    }
+    else {
+      await sendWhatsAppMsg_API(972566252561, `did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
+    }
 
   } catch (error) {
     console.log(error);
+    try {
+      await sendWhatsAppMsg_API(972566252561, ` ERROR: did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
+    }
+    catch (error) {
+      console.log(error);
+    }
     // res.status(500).send("Something went wrong: " + error);
   }
 }
@@ -98,7 +117,7 @@ router.get('/', async (req, res) => {
 
 router.get('/all', async (req, res) => {
   const filters = await getFilters(req);
- const records = await Record.find({ where: { ...filters, }, withDeleted: true, relations: ['user', 'type'] });
+ const records = await Record.find({ where: { ...filters, }, order: { date: 'ASC', createdAt: 'ASC' }, withDeleted: true, relations: ['user', 'type'] });
   res.send(records);
 });
 
@@ -170,7 +189,7 @@ router.post('/', async (req, res) => {
     db.dataSource.transaction(async (transactionManager) => {
       await transactionManager.save(record);
     }).then(async () => {
-      await sendWhatsAppMsg(user, req.body.amount);
+      await sendWhatsAppMsg(user, record);
       res.status(201).send(record);
     }).catch(error => {
       res.status(500).send("Something went wrong: " + error);
