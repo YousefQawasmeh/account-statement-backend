@@ -75,7 +75,7 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
     return match ? match[1] : '';
   }
   const name = extractNameInBrackets(user.name)
-  const displayName = (amount >=0 && name) ? `عزيزي ${name}، ` : `${name}،`;
+  const displayName = !name ? "" : (amount >=0 ? `عزيزي ${name}، ` : `${name}،`);
   notes = notes ? ` (لـ ${notes})` : ""
   const dateStr = new Date(date).toLocaleDateString("en-GB", {
     year: "numeric",
