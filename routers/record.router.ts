@@ -75,8 +75,8 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
     return match ? match[1] : '';
   }
   const name = extractNameInBrackets(user.name)
-  const displayName = (amount >=0 && name) ? `عزيزي ${name}، ` : `${name}،`;
-  notes = notes ? ` ( ${notes})` : ""
+  const displayName = (amount >=0 && name) ? `عزيزي ${name}، ` : `${name}`;
+  notes = notes ? ` (${notes})` : ""
   let dateStr = new Date(date).toLocaleDateString("en-GB", {
     year: "numeric",
     month: "numeric",
@@ -91,7 +91,7 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
       const total = (newTotal >= 0 ? "عليكم: " : "لكم: ") + (newTotal >= 0 ? newTotal : newTotal * -1)
       const msgs = [
         `${displayName}تم تسجيل شراءك${notes} بمبلغ ${amount} شيكل من سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدكم الحالي: ${total} شيكل.`,
-        `شكرًا لك، ${displayName} على تسديدك مبلغ ${amount} شيكل لحسابكم في سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدك الحالي: ${total} شيكل.`
+        `شكرًا لك، ${displayName} على تسديدك مبلغ ${amount*-1} شيكل لحسابكم في سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدك الحالي: ${total} شيكل.`
       ]
       await sendWhatsAppMsg_API(+userNo, amount >= 0 ? msgs[0] : msgs[1]);
     }
