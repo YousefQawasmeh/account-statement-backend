@@ -76,12 +76,15 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
   }
   const name = extractNameInBrackets(user.name)
   const displayName = (amount >=0 && name) ? `عزيزي ${name}، ` : `${name}،`;
-  notes = notes ? ` (لـ ${notes})` : ""
-  const dateStr = new Date(date).toLocaleDateString("en-GB", {
+  notes = notes ? ` ( ${notes})` : ""
+  let dateStr = new Date(date).toLocaleDateString("en-GB", {
     year: "numeric",
     month: "numeric",
     day: "numeric",
   })
+  // example for dateStr: 13/05/2023
+  dateStr = dateStr.replace(/0?7\/10\//, "_*7 اكتوبر🔻*_ ");
+
   try {
     if (user.type.id === 1 && userNo) {
       const newTotal = user.total + amount
