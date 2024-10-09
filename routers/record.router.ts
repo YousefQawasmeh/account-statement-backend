@@ -70,13 +70,8 @@ const sendWhatsAppMsg_API = async (phone: number, msg: string) => {
 const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: number, notes: string, date: Date }) => {
   const userNo = user.phone?.length >= 9 && user.phone.length !== 12 ? ("972" + user.phone.slice(-9)) : user.phone
 
-  const extractNameInBrackets = (str: string) => {
-    const match = str.match(/\(([^)]+)\)/);
-    return match ? match[1] : '';
-  }
-  const name = extractNameInBrackets(user.name)
-  const displayName = (amount >=0 && name) ? `عزيزي ${name}، ` : `${name}`;
-  notes = notes ? ` (${notes})` : ""
+  const displayName = (amount >=0 && user.subName) ? `عزيزي ${user.subName}، ` : "";
+  notes = notes ? ` ( ${notes})` : ""
   let dateStr = new Date(date).toLocaleDateString("en-GB", {
     year: "numeric",
     month: "numeric",
