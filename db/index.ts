@@ -1,30 +1,8 @@
 import dataSource from "./dataSource.js";
 import { RecordType } from "./entity/RecordType.js";
 import { UserType } from "./entity/UserType.js";
-import { execute } from "@getvim/execute";
 import cron from "node-cron";
-
-const dbUrl = new URL(process.env.DATABASE_URL || "");
-
-const DBPASSWORD = dbUrl.password;
-const DBUSERNAME = dbUrl.username;
-const DBNAME = dbUrl.pathname.slice(1);
-const DBHOST = dbUrl.hostname;
-
-const backup = async () => {
-  const date = new Date();
-  const month = date.getMonth() + 1;
-  const year = date.getFullYear();
-  const day = date.getDate();
-  // const hour = date.getHours();
-  // const minute = date.getMinutes();
-  // const second = date.getSeconds();
-
-  // const fileName = `account-statement-${year}-${month}-${day}-${hour}-${minute}-${second}.sql`;
-  const fileName = `account-statement-${year}-${month}-${day}-${date.getTime()}.sql`;
-
-  await execute(`PGPASSWORD="${DBPASSWORD}" pg_dump -h ${DBHOST} -U ${DBUSERNAME} -d ${DBNAME} -f /app/DB-backups/${fileName}`);
-};
+import backup from "../services/db-backup.js";
 
 
 async function insertDefaultData() {
@@ -66,8 +44,8 @@ const initialize = () => {
   dataSource.initialize().then(() => {
     insertDefaultData();
     console.log("Connected to DB!");
-
-    cron.schedule('0 2 * * *', async () => {
+////////0 2
+    cron.schedule('* * * * *', async () => {
       try {
         await backup();
         console.log('Backup done');
