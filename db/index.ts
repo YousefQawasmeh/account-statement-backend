@@ -1,6 +1,9 @@
 import dataSource from "./dataSource.js";
 import { RecordType } from "./entity/RecordType.js";
 import { UserType } from "./entity/UserType.js";
+import cron from "node-cron";
+import backup from "../services/db-backup.js";
+import {sendWhatsAppMsg_API} from "../services/whatsapp.js";
 
 async function insertDefaultData() {
   const defaultRecordTypes = [
@@ -37,13 +40,30 @@ async function insertDefaultData() {
     }
   }
 }
+
 const initialize = () => {
   dataSource.initialize().then(() => {
     insertDefaultData();
     console.log("Connected to DB!");
+
+    if (process.env.NODE_ENV === 'production') {
+      cron.schedule('0 2 * * *', async () => {
+        try {
+          await backup();
+          console.log('Backup done');
+          await sendWhatsAppMsg_API(972566252561, 'Backup done');
+        } catch (err) {
+          console.error('Backup failed:', err);
+          await sendWhatsAppMsg_API(972566252561, 'Backup failed: ' + err);
+        }
+      });
+      console.log("Cron job scheduled for backup.");
+    } else {
+      console.log("Cron job will not run in non-production environment.");
+    }
   }).catch(err => {
     console.error('Failed to connect to DB: ' + err);
-  })
+  });
 }
 
 export default { initialize, dataSource };

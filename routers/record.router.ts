@@ -1,10 +1,10 @@
 import express from 'express';
-import Axios from 'axios';
 import { Record } from '../db/entity/Record.js';
 import db from '../db/index.js';
 import { User } from '../db/entity/User.js';
 import { RecordType } from '../db/entity/RecordType.js';
 import { Between, IsNull, Not } from 'typeorm';
+import { sendWhatsAppMsg_API } from '../services/whatsapp.js';
 const router = express.Router();
 
 const filtersKeys: { [key: string]: string | number } = {
@@ -49,23 +49,6 @@ const getFilters = async (req: any) => {
   return filters;
 }
 
-const sendWhatsAppMsg_API = async (phone: number, msg: string) => {
-  const WHATSAPP_SESSION_ID = process.env.WHATSAPP_SESSION_ID;
-  const WHATSAPP_URL = process.env.WHATSAPP_URL;
-  const sendMsg_URL = `${WHATSAPP_URL}/client/sendMessage/${WHATSAPP_SESSION_ID}`
-  const getNumberId = `${WHATSAPP_URL}/client/getNumberId/${WHATSAPP_SESSION_ID}`
-  const chatData = await Axios.post(getNumberId, {
-    number: phone+""
-  })
-
-  const data = {
-    chatId:chatData.data?.result?._serialized,
-    contentType: "string",
-    content:msg
-  }
-
-  const response = await Axios.post(sendMsg_URL, data)  
-}
 
 const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: number, notes: string, date: Date }) => {
   const userNo = user.phone?.length >= 9 && user.phone.length !== 12 ? ("972" + user.phone.slice(-9)) : user.phone
