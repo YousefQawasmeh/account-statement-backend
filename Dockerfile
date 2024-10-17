@@ -1,7 +1,7 @@
 # Dockerfile
 
 # build environment
-FROM node:18.17.0-alpine AS build
+FROM node:alpine AS build
 # RUN apt-get update \
 #     && apt-get install -y wget gnupg \
 #     && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/googlechrome-linux-keyring.gpg \
