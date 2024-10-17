@@ -61,7 +61,7 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
     day: "numeric",
   })
   // example for dateStr: 13/05/2023
-  dateStr = dateStr.replace(/0?7\/10\//, "_*7 اكتوبر🔻*_ ");
+  dateStr = dateStr.replace(/\b0?7\/10\b/, " _*7 اكتوبر🔻*_ ");
 
   try {
     if (user.type.id === 1 && userNo) {
