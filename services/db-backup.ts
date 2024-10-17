@@ -1,4 +1,3 @@
-
 import { execute } from "@getvim/execute";
 import { uploadFile } from "./dropbox.js";
 import path from 'path';
@@ -17,12 +16,12 @@ const backup = async () => {
     // const hour = date.getHours();
     // const minute = date.getMinutes();
     // const second = date.getSeconds();
-    
+
     // const fileName = `account-statement-${year}-${month}-${day}-${hour}-${minute}-${second}.sql`;
     // const fileName = `account-statement-${year}-${month}-${day}-${date.getTime()}.sql`;
     const fileName = `account-statement-${year}-${month}-${day}.sql`;
-    const filePath = path.resolve(__dirname,'DB-backups', fileName);
-  
+    //const filePath = path.resolve(__dirname,'..', '..','DB-backups', fileName);
+    const filePath = `/app/DB-backups/${fileName}`
     await execute(`PGPASSWORD="${DBPASSWORD}" pg_dump -h ${DBHOST} -U ${DBUSERNAME} -d ${DBNAME} -f /app/DB-backups/${fileName}`);
     await uploadFile(`${filePath}`, `/account statement/DB-backups/${month}`);
   };
