@@ -4,6 +4,7 @@ import { UserType } from "./entity/UserType.js";
 import cron from "node-cron";
 import backup from "../services/db-backup.js";
 import {sendWhatsAppMsg_API} from "../services/whatsapp.js";
+import { Bank } from "./entity/Bank.js";
 
 async function insertDefaultData() {
   const defaultRecordTypes = [
@@ -19,6 +20,23 @@ async function insertDefaultData() {
     { id: 1, title: 'زبون' },
     { id: 2, title: 'تاجر' }
   ];
+
+  const defaultBanks = [
+    { id: 73, name: "البنك الاسلامي العربي" },
+    { id: 82, name: "بنك القدس" },
+    { id: 49, name: "البنك العربي" },
+    { id: 67, name: "البنك العقاري المصري العربي" },
+    { id: 37, name: "بنك الأردن" },
+    { id: 66, name: "بنك القاهرة عمان" },
+    { id: 84, name: "بنك الاسكان للتجارة والتمويل" },
+    { id: 71, name: "البنك التجاري الأردني" },
+    { id: 43, name: "البنك الأهلي الأردني" },
+    { id: 89, name: "بنك فلسطين" },
+    { id: 81, name: "البنك الإسلامي الفلسطيني" },
+    { id: 76, name: "بنك الاستثمار الفلسطيني" },
+    { id: 27, name: "البنك الوطني" },
+    { id: 10, name: "بنك اسرائيلي" }
+]
 
   for (const type of defaultUserTypes) {
     const existingType = await UserType.findOneBy({ id: type.id });
@@ -37,6 +55,16 @@ async function insertDefaultData() {
       newRecordType.title = type.title;
       newRecordType.id = Number(type.id);
       await newRecordType.save();
+    }
+  }
+
+  for (const bank of defaultBanks) {
+    const existingBank = await Bank.findOneBy({ id: bank.id });
+    if (!existingBank) {
+      const newBank = new Bank();
+      newBank.name = bank.name;
+      newBank.id = Number(bank.id);
+      await newBank.save();
     }
   }
 }

@@ -5,6 +5,8 @@ import { User } from '../db/entity/User.js';
 import { RecordType } from '../db/entity/RecordType.js';
 import { Between, IsNull, Not } from 'typeorm';
 import { sendWhatsAppMsg_API } from '../services/whatsapp.js';
+import { Check } from '../db/entity/Check.js';
+import { Bank } from '../db/entity/Bank.js';
 const router = express.Router();
 
 const filtersKeys: { [key: string]: string | number } = {
@@ -53,7 +55,7 @@ const getFilters = async (req: any) => {
 const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: number, notes: string, date: Date }) => {
   const userNo = user.phone?.length >= 9 && user.phone.length !== 12 ? ("972" + user.phone.slice(-9)) : user.phone
 
-  const displayName = (amount >=0 && user.subName) ? `عزيزي ${user.subName}، ` : "";
+  const displayName = (amount >= 0 && user.subName) ? `عزيزي ${user.subName}، ` : "";
   notes = notes ? ` ( ${notes})` : ""
   let dateStr = new Date(date).toLocaleDateString("en-GB", {
     year: "numeric",
@@ -69,7 +71,7 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
       const total = (newTotal >= 0 ? "عليكم: " : "لكم: ") + (newTotal >= 0 ? newTotal : newTotal * -1)
       const msgs = [
         `${displayName}تم تسجيل شراءك${notes} بمبلغ ${amount} شيكل من سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدكم الحالي: ${total} شيكل.`,
-        `شكرًا لك، ${displayName} على تسديدك مبلغ ${amount*-1} شيكل لحسابكم في سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدك الحالي: ${total} شيكل.`
+        `شكرًا لك، ${displayName} على تسديدك مبلغ ${amount * -1} شيكل لحسابكم في سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدك الحالي: ${total} شيكل.`
       ]
       await sendWhatsAppMsg_API(+userNo, amount >= 0 ? msgs[0] : msgs[1]);
     }
@@ -89,7 +91,6 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
   }
 }
 
-
 router.get('/', async (req, res) => {
   const filters = await getFilters(req);
   const records = await Record.find({ where: { ...filters }, order: { date: 'ASC', createdAt: 'ASC' }, relations: ['user', 'type'] });
@@ -98,7 +99,7 @@ router.get('/', async (req, res) => {
 
 router.get('/all', async (req, res) => {
   const filters = await getFilters(req);
- const records = await Record.find({ where: { ...filters, }, order: { date: 'ASC', createdAt: 'ASC' }, withDeleted: true, relations: ['user', 'type'] });
+  const records = await Record.find({ where: { ...filters, }, order: { date: 'ASC', createdAt: 'ASC' }, withDeleted: true, relations: ['user', 'type'] });
   res.send(records);
 });
 
@@ -121,7 +122,7 @@ router.get('/:id', async (req, res) => {
 router.get('/user/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
-    const records = await Record.find({ where: { user: { id: userId } }, relations: ['type'] });
+    const records = await Record.find({ where: { user: { id: userId } }, relations: ['user', 'type'] });
     res.send(records);
   } catch (error) {
     res.status(404).send("User not found!")
@@ -138,7 +139,7 @@ router.get('/card/:cardId', async (req, res) => {
     //   return;
     // }
     // const records = await Record.find({ where: { user: {cardId: user.cardId} }, relations: ['type'] });
-    const records = await Record.find({ where: { user: { cardId: cardId } }, relations: ['type'] });
+    const records = await Record.find({ where: { user: { cardId: cardId } }, relations: ['user', 'type'] });
     // const records = await Record.find({ where: { user: user.id }, relations: [ 'users', 'type'] });
     res.send(records);
   } catch (error) {
@@ -159,19 +160,57 @@ router.post('/', async (req, res) => {
       res.status(404).send("RecordType not found!")
       return;
     }
+
+    const checks: Check[] = [];
+    for (const checkDetails of req.body.checks) {
+      const bank = await Bank.findOneBy({ id: checkDetails.bankId });
+      if (!bank) {
+        return res.status(404).send("Bank not found!");
+      }
+
+      const check = new Check();
+      check.amount = checkDetails.amount;
+      check.checkNumber = checkDetails.checkNumber;
+      check.bank = bank;
+      check.available = checkDetails.available !== false;
+      check.dueDate = checkDetails.dueDate;
+      check.notes = checkDetails.notes;
+      checks.push(check);
+    }
     const record = new Record();
     record.amount = req.body.amount;
     record.date = req.body.date;
     record.notes = req.body.notes;
     record.type = recordType;
-    // record.type = req.body.type;
     record.user = user;
+    record.checks = checks;
 
     db.dataSource.transaction(async (transactionManager) => {
-      await transactionManager.save(record);
+      const savedRecord = await transactionManager.save(record);
+
+      for (const check of checks) {
+        check.record = savedRecord;
+        await transactionManager.save(check);
+      }
+
     }).then(async () => {
       await sendWhatsAppMsg(user, record);
-      res.status(201).send(record);
+      const responseRecord = {
+        id: record.id,
+        amount: record.amount,
+        date: record.date,
+        notes: record.notes,
+        type: record.type,
+        user: record.user,
+        checks: checks.map(check => ({
+          id: check.id,
+          amount: check.amount,
+          checkNumber: check.checkNumber,
+          bank: check.bank,
+          available: check.available
+        }))
+      };
+      res.status(201).send(responseRecord);
     }).catch(error => {
       res.status(500).send("Something went wrong: " + error);
     });
@@ -221,6 +260,7 @@ router.delete('/:id', async (req, res) => {
 
     record.deletedAt = new Date();
     record.notes += ` ::: ${req.body.notes}`;
+
     await record.save();
 
     res.send('Record Deleted');

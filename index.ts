@@ -6,6 +6,7 @@ import userRouter from './routers/user.router.js';
 import recordRouter from './routers/record.router.js';
 import userTypeRouter from './routers/userType.router.js';
 import recordTypeRouter from './routers/recordType.router.js';
+import checkRouter from './routers/check.router.js';
 import cors from 'cors'; 
 import Axios from 'axios';
 const app = express();
@@ -23,6 +24,8 @@ app.use('/api/records', recordRouter);
 app.use('/api/usertypes', userTypeRouter);
 
 app.use('/api/recordtypes', recordTypeRouter);
+
+app.use('/api/checks', checkRouter);
 
 // app.get('*', function (req, res) {
 //   res.sendFile(path.join(__dirname, '../dist copy', 'index.html'));
