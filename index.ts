@@ -7,6 +7,7 @@ import recordRouter from './routers/record.router.js';
 import userTypeRouter from './routers/userType.router.js';
 import recordTypeRouter from './routers/recordType.router.js';
 import checkRouter from './routers/check.router.js';
+import BankRouter from './routers/bank.router.js';
 import cors from 'cors'; 
 import Axios from 'axios';
 const app = express();
