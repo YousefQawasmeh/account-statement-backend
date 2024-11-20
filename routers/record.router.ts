@@ -163,19 +163,30 @@ router.post('/', async (req, res) => {
 
     const checks: Check[] = [];
     for (const checkDetails of req.body.checks) {
-      const bank = await Bank.findOneBy({ id: checkDetails.bankId });
-      if (!bank) {
-        return res.status(404).send("Bank not found!");
+      if (checkDetails.id) {
+        const check = await Check.findOneBy({ id: checkDetails.id, available: true });
+        if (!check) {
+          return res.status(404).send("Check not found or not available!");
+        }
+        check.available = false;
+        await check.save();
+        checks.push(check);
       }
+      else {
+        const bank = await Bank.findOneBy({ id: checkDetails.bankId });
+        if (!bank) {
+          return res.status(404).send("Bank not found!");
+        }
 
-      const check = new Check();
-      check.amount = checkDetails.amount;
-      check.checkNumber = checkDetails.checkNumber;
-      check.bank = bank;
-      check.available = checkDetails.available !== false;
-      check.dueDate = checkDetails.dueDate;
-      check.notes = checkDetails.notes;
-      checks.push(check);
+        const check = new Check();
+        check.amount = checkDetails.amount;
+        check.checkNumber = checkDetails.checkNumber;
+        check.bank = bank;
+        check.available = checkDetails.available !== false;
+        check.dueDate = checkDetails.dueDate;
+        check.notes = checkDetails.notes;
+        checks.push(check);
+      }
     }
     const record = new Record();
     record.amount = req.body.amount;
