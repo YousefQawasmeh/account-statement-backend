@@ -4,9 +4,13 @@ import { IsNull, Not } from 'typeorm';
 
 const router = express.Router();
 
-router.get('/', async (_, res) => {
-    const checks = await Check.find( { relations: ['fromRecord', 'bank', 'fromRecord.user', 'toRecord', 'toRecord.user'] } );
-    res.send(checks);
+router.get('/', async (req, res) => {
+  const filters: any = {};
+  if(req.query.available === 'true') {
+    filters['available'] = true
+  }
+  const checks = await Check.find( { where: { ...filters }, relations: ['fromRecord', 'bank', 'fromRecord.user', 'toRecord', 'toRecord.user'] } );
+  res.send(checks);
 });
 
 router.get('/:id', async (req, res) => {
