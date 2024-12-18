@@ -94,7 +94,12 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
 router.get('/', async (req, res) => {
   const filters = await getFilters(req);
   const records = await Record.find({ where: { ...filters }, order: { date: 'ASC', createdAt: 'ASC' }, relations: ['user', 'type'] });
-  res.send(records);
+  res.send(records.map(record => {
+    return {
+      ...record,
+      checks: [...(record.checksFrom || []), ...(record.checksTo || [])]
+    }
+  }));
 });
 
 router.get('/all', async (req, res) => {
@@ -161,8 +166,18 @@ router.post('/', async (req, res) => {
       return;
     }
 
+    if (!req.body.amount) {
+      res.status(400).send("Missing amount!");
+      return;
+    }
+    if (!req.body.date) {
+      res.status(400).send("Missing date!");
+      return;
+    }
+
+
     const checks: Check[] = [];
-    for (const checkDetails of req.body.checks) {
+    for (const checkDetails of (req.body?.checks || [])) {
       if (checkDetails.id) {
         const check = await Check.findOneBy({ id: checkDetails.id, available: true });
         if (!check) {
@@ -194,13 +209,19 @@ router.post('/', async (req, res) => {
     record.notes = req.body.notes;
     record.type = recordType;
     record.user = user;
-    record.checks = checks;
+    // record.checks = checks;
 
     db.dataSource.transaction(async (transactionManager) => {
       const savedRecord = await transactionManager.save(record);
 
       for (const check of checks) {
-        check.record = savedRecord;
+        if (check.available) {
+          check.fromRecord = savedRecord;
+        }
+        else {
+          check.available = false;
+          check.toRecord = savedRecord;
+        }
         await transactionManager.save(check);
       }
 
@@ -270,6 +291,20 @@ router.delete('/:id', async (req, res) => {
     }
 
     record.deletedAt = new Date();
+    // to do: need to delete the checks from the database not here
+    // record.checks.forEach(check => {
+    //   if(check.available){
+    //     check.deletedAt = new Date();
+    //   }
+    //   else{
+    //     check.available = true;
+    //     check.toRecord = null;
+    //   }
+    //   await check.save().catch(error => {
+    //     console.error(error);
+    //     res.status(500).send("Something went wrong, couldn't update check: " + error);
+    //   })
+    // });
     record.notes += ` ::: ${req.body.notes}`;
 
     await record.save();

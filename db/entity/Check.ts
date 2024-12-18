@@ -6,6 +6,7 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
     DeleteDateColumn,
+    JoinColumn,
 } from "typeorm";
 import { Record } from "./Record.js";
 import { Bank } from "./Bank.js";
@@ -21,8 +22,13 @@ export class Check extends BaseEntity {
     @Column()
     amount!: number;
 
-    @ManyToOne(() => Record, record => record.checks)
-    record!: Record;
+    @ManyToOne(() => Record, record => record.checksFrom, { nullable: true })
+    @JoinColumn({ name: "fromRecordId" })
+    fromRecord!: Record;
+
+    @ManyToOne(() => Record, record => record.checksTo, { nullable: true })
+    @JoinColumn({ name: "toRecordId" })
+    toRecord!: Record;
 
     @ManyToOne(() => Bank, bank => bank.checks, { eager: true })
     bank!: Bank;

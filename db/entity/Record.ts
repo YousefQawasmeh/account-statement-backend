@@ -47,8 +47,11 @@ export class Record extends BaseEntity {
     @Column({ nullable: true, length: 256 })
     notes!: string;
 
-    @OneToMany(() => Check, (check: Check) => check.record, { eager: true })
-    checks!: Check[];
+    @OneToMany(() => Check, (check: Check) => check.fromRecord, { eager: true })
+    checksFrom!: Check[];
+
+    @OneToMany(() => Check, check => check.toRecord, { eager: true })
+    checksTo!: Check[];
 
     @BeforeInsert()
     async beforeInsert() {

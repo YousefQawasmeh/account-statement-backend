@@ -5,14 +5,14 @@ import { IsNull, Not } from 'typeorm';
 const router = express.Router();
 
 router.get('/', async (_, res) => {
-    const checks = await Check.find( { relations: ['record', 'bank', 'record.user'] } );
+    const checks = await Check.find( { relations: ['fromRecord', 'bank', 'fromRecord.user', 'toRecord', 'toRecord.user'] } );
     res.send(checks);
 });
 
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const check = await Check.findOne({ where: { id }, relations: ['record', 'bank', 'record.user'] });
+    const check = await Check.findOne({ where: { id }, relations: ['fromRecord', 'bank', 'fromRecord.user', 'toRecord', 'toRecord.user'] });
     res.send(check);
   } catch (error) {
     res.status(404).send("Check not found!")
@@ -24,7 +24,7 @@ router.post('/', async (req, res) => {
     const check = new Check();
     check.amount = req.body.amount;
     check.checkNumber = req.body.checkNumber;
-    check.record = req.body.record;
+    // check.record = req.body.record;
     check.bank = req.body.bank;
     check.dueDate = req.body.dueDate;
     check.available = req.body.available !== false ;
@@ -52,12 +52,12 @@ router.put('/:id', async (req, res) => {
 });
 
 router.get('/deleted', async (_, res) => {
-  const checks = await Check.find({ withDeleted: true, relations: ['record', 'bank', 'record.user'], where: { deletedAt: Not(IsNull()) } });
+  const checks = await Check.find({ withDeleted: true, relations: ['fromRecord', 'bank', 'fromRecord.user', 'toRecord', 'toRecord.user'], where: { deletedAt: Not(IsNull()) } });
   res.send(checks);
 });
 
 router.get('/all', async (_, res) => {
-  const checks = await Check.find({ withDeleted: true, relations: ['record', 'bank', 'record.user'] });
+  const checks = await Check.find({ withDeleted: true, relations: ['fromRecord', 'bank', 'fromRecord.user', 'toRecord', 'toRecord.user'] });
   res.send(checks);
 });
 
