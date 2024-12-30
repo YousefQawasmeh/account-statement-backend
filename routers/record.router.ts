@@ -7,6 +7,7 @@ import { Between, IsNull, Not } from 'typeorm';
 import { sendWhatsAppMsg_API } from '../services/whatsapp.js';
 import { Check } from '../db/entity/Check.js';
 import { Bank } from '../db/entity/Bank.js';
+import { Image } from '../db/entity/Image.js';
 const router = express.Router();
 
 const filtersKeys: { [key: string]: string | number } = {
@@ -94,10 +95,14 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
 router.get('/', async (req, res) => {
   const filters = await getFilters(req);
   const records = await Record.find({ where: { ...filters }, order: { date: 'ASC', createdAt: 'ASC' }, relations: ['user', 'type'] });
-  res.send(records.map(record => {
+  res.send(records.map(({ checksFrom, checksTo, images, ...record }) => {
     return {
       ...record,
-      checks: [...(record.checksFrom || []), ...(record.checksTo || [])]
+      checks: [...(checksFrom || []), ...(checksTo || [])].map((check: any) => {
+        check.images = check.images.map((image: { name: string; }) => image.name);
+        return check
+      }),
+      images: images.map(image => image.name),
     }
   }));
 });
@@ -175,6 +180,26 @@ router.post('/', async (req, res) => {
       return;
     }
 
+    const recordImages: Image[] = [];
+    const checksImages: Image[][] = [];
+    Array.isArray(req.files) && req.files?.forEach((file: any) => {
+      const image = new Image();
+      image.name = file?.filename;
+      image.path = file?.path;
+      image.updatedAt = new Date();
+      if (file.fieldname.startsWith('images[')) {
+        recordImages.push(image);
+      }
+      else if (file.fieldname.startsWith('checks[')) {
+        const ckeckNo = file.fieldname.match(/\[(\d+)\]/)?.[1];
+        if (checksImages[+ckeckNo]?.length > 0) {
+          checksImages[+ckeckNo].push(image);
+        }
+        else {
+          checksImages[+ckeckNo] = [image];
+        }
+      }
+    })
 
     const checks: Check[] = [];
     for (const checkDetails of (req.body?.checks || [])) {
@@ -214,7 +239,7 @@ router.post('/', async (req, res) => {
     db.dataSource.transaction(async (transactionManager) => {
       const savedRecord = await transactionManager.save(record);
 
-      for (const check of checks) {
+      checks.forEach(async (check, index) => {
         if (check.available) {
           check.fromRecord = savedRecord;
         }
@@ -222,7 +247,18 @@ router.post('/', async (req, res) => {
           check.available = false;
           check.toRecord = savedRecord;
         }
-        await transactionManager.save(check);
+        const savedCheck = await transactionManager.save(check);
+
+        for (const image of (checksImages[index] || [])) {
+          image.check = savedCheck;
+          // image.record = savedRecord;
+          await transactionManager.save(image);
+        }
+      })
+
+      for (const image of recordImages) {
+        image.record = savedRecord;
+        await transactionManager.save(image);
       }
 
     }).then(async () => {

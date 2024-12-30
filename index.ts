@@ -8,8 +8,10 @@ import userTypeRouter from './routers/userType.router.js';
 import recordTypeRouter from './routers/recordType.router.js';
 import checkRouter from './routers/check.router.js';
 import BankRouter from './routers/bank.router.js';
-import cors from 'cors'; 
-import Axios from 'axios';
+import imageRouter from './routers/image.router.js';
+import uploadFiles from './middleware/uploadFiles.js';
+import cors from 'cors';
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -20,7 +22,7 @@ app.use(express.json());
 
 app.use('/api/users', userRouter);
 
-app.use('/api/records', recordRouter);
+app.use('/api/records', uploadFiles.any(), recordRouter);
 
 app.use('/api/usertypes', userTypeRouter);
 
@@ -29,6 +31,8 @@ app.use('/api/recordtypes', recordTypeRouter);
 app.use('/api/checks', checkRouter);
 
 app.use('/api/banks', BankRouter);
+
+app.use('/api/images', imageRouter);
 
 // app.get('*', function (req, res) {
 //   res.sendFile(path.join(__dirname, '../dist copy', 'index.html'));

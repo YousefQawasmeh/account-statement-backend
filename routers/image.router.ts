@@ -1,0 +1,36 @@
+import express from 'express';
+import { Image } from '../db/entity/Image.js';
+// import { In } from 'typeorm';
+
+const imageRouter = express.Router();
+
+// imageRouter.get('/', async (req, res) => {
+//     const names: string[] = req.query.names as string[];
+//     const images = await Image.find({ where: { name:  In(names) } });
+//     res.send(images);
+// })
+
+imageRouter.get('/:name', async (req, res) => {
+    const name = req.params.name;
+    const image = await Image.findOne({ where: { name } });
+    if (image) {
+        res.sendFile(image.path);
+    }
+    else {
+        res.status(404).send("Image not found!")
+    }
+})
+
+imageRouter.delete('/:name', async (req, res) => {
+    const name = req.params.name;
+    const image = await Image.findOne({ where: { name } });
+    if (image) {
+        await image.remove();
+        res.send("Image deleted!");
+    }
+    else {
+        res.status(404).send("Image not found!")
+    }
+})
+
+export default imageRouter

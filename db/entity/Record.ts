@@ -15,6 +15,7 @@ import {
 import { User } from "./User.js";
 import { RecordType } from "./RecordType.js";
 import { Check } from "./Check.js";
+import { Image } from "./Image.js";
 
 @Entity()
 export class Record extends BaseEntity {
@@ -52,6 +53,9 @@ export class Record extends BaseEntity {
 
     @OneToMany(() => Check, check => check.toRecord, { eager: true })
     checksTo!: Check[];
+
+    @OneToMany(() => Image, image => image.record, { eager: true })
+    images!: Image[];
 
     @BeforeInsert()
     async beforeInsert() {

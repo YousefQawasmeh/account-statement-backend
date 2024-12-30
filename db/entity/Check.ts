@@ -7,9 +7,11 @@ import {
     UpdateDateColumn,
     DeleteDateColumn,
     JoinColumn,
+    OneToMany,
 } from "typeorm";
 import { Record } from "./Record.js";
 import { Bank } from "./Bank.js";
+import { Image } from "./Image.js";
 
 @Entity()
 export class Check extends BaseEntity {
@@ -41,6 +43,9 @@ export class Check extends BaseEntity {
 
     @Column( { nullable: true, length: 256 })
     notes!: string
+
+    @OneToMany(() => Image, image => image.check, { eager: true })
+    images!: Image[]
 
     @UpdateDateColumn({ nullable: true, default: null })
     updatedAt!: Date;
