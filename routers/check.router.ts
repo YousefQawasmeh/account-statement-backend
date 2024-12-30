@@ -10,7 +10,10 @@ router.get('/', async (req, res) => {
     filters['available'] = true
   }
   const checks = await Check.find( { where: { ...filters }, relations: ['fromRecord', 'bank', 'fromRecord.user', 'toRecord', 'toRecord.user'] } );
-  res.send({...checks, images: checks.map(check => check.images.map(image => image.name))});
+  const responseChecks = checks.map(check => {
+    return {...check, images: check.images.map(image => image.name)}
+  })
+  res.send(responseChecks);
 });
 
 router.get('/:id', async (req, res) => {
