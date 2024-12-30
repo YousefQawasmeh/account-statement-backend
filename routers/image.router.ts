@@ -1,5 +1,6 @@
 import express from 'express';
 import { Image } from '../db/entity/Image.js';
+import path from 'path';
 // import { In } from 'typeorm';
 
 const imageRouter = express.Router();
@@ -10,14 +11,19 @@ const imageRouter = express.Router();
 //     res.send(images);
 // })
 
-imageRouter.get('/:name', async (req, res) => {
-    const name = req.params.name;
-    const image = await Image.findOne({ where: { name } });
-    if (image) {
-        res.sendFile(image.path);
+imageRouter.get('/', async (req, res) => {
+    const name = req.query.name as string;
+    try {
+        const image = await Image.findOne({ where: { name } });
+        if (image) {
+            res.sendFile(path.resolve(image.path));
+        }
+        else {
+            res.status(404).send("Image not found!")
+        }
     }
-    else {
-        res.status(404).send("Image not found!")
+    catch (error) {
+        res.status(500).send("Something went wrong: " + error);
     }
 })
 

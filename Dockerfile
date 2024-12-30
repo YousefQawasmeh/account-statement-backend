@@ -22,4 +22,5 @@ RUN apk update && apk add --no-cache postgresql-client&& apk add --no-cache bash
 
 EXPOSE 3000
 VOLUME /app/DB-backups
+VOLUME /app/dist/uploads
 CMD ["node", "dist/index.js"]
