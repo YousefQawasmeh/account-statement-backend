@@ -9,10 +9,13 @@ import {
     DeleteDateColumn,
     BeforeInsert,
     BeforeUpdate,
-    JoinColumn
+    JoinColumn,
+    OneToMany
 } from "typeorm";
 import { User } from "./User.js";
 import { RecordType } from "./RecordType.js";
+import { Check } from "./Check.js";
+import { Image } from "./Image.js";
 
 @Entity()
 export class Record extends BaseEntity {
@@ -45,12 +48,20 @@ export class Record extends BaseEntity {
     @Column({ nullable: true, length: 256 })
     notes!: string;
 
+    @OneToMany(() => Check, (check: Check) => check.fromRecord, { eager: true })
+    checksFrom!: Check[];
+
+    @OneToMany(() => Check, check => check.toRecord, { eager: true })
+    checksTo!: Check[];
+
+    @OneToMany(() => Image, image => image.record, { eager: true })
+    images!: Image[];
+
     @BeforeInsert()
     async beforeInsert() {
         try {
             await this.updateTotal();
-        }
-        catch (err) {
+        } catch (err) {
             throw (err);
         }
     }
@@ -62,8 +73,7 @@ export class Record extends BaseEntity {
             if (originalRecord) {
                 await this.updateTotal(originalRecord);
             }
-        }
-        catch (err) {
+        } catch (err) {
             throw (err);
         }
     }
@@ -80,26 +90,30 @@ export class Record extends BaseEntity {
             throw ("user not found");
         }
 
-        if(!previousRecord) {
-            saveNewUserTotal(user, user.total + +this.amount);
+        if (!previousRecord) {
+            await saveNewUserTotal(user, user.total + +this.amount);
             return;
         }
 
-        if(previousRecord.deletedAt !== null) {
+        if (previousRecord.deletedAt !== null) {
             throw ("it's not accepted to update a deleted record");
         }
 
-        if(this.deletedAt !== null) {
+        if (this.deletedAt !== null) {
             this.deletedAt = new Date();
-            saveNewUserTotal(user, user.total - previousRecord.amount);
+            await saveNewUserTotal(user, user.total - previousRecord.amount);
+            await Check.createQueryBuilder()
+                .update()
+                .set({ deletedAt: new Date() })
+                .where("recordId = :recordId", { recordId: this.id })
+                .execute();
             return;
         }
 
-        if (previousRecord.amount !== +this.amount){
+        if (previousRecord.amount !== +this.amount) {
             this.updatedAt = new Date();
-            saveNewUserTotal(user, user.total - (previousRecord?.amount) + (+this.amount));
+            await saveNewUserTotal(user, user.total - (previousRecord?.amount) + (+this.amount));
             return;
         }
     }
-    
 }

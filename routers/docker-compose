@@ -1,0 +1,77 @@
+services:
+  backend:
+    build:
+      context: ./account-statement-backend
+      dockerfile: Dockerfile
+    #ports:
+    #  - "3001:3000"
+    depends_on:
+      - db
+      - whatsapp-api
+    networks:
+      - proxy
+    restart: always
+    environment:
+      #- DATABASE_URL=postgres://postgres:password@db:5432/account-statement
+      - DATABASE_URL=postgres://postgres:password@172.17.0.1:5432/account-statement
+      - WHATSAPP_SESSION_ID=account-statement
+      - WHATSAPP_URL=http://whatsapp-api:3000
+    volumes:
+      - ./docker-volumes/backend:/usr/src/app
+
+  whatsapp-api:
+    build:
+      context: ./whatsapp-api
+      dockerfile: Dockerfile
+    #ports:
+    #  - "3003:3000"
+    environment:
+      - BASE_WEBHOOK_URL=http://localhost:3003/localCallbackExample
+      - MAX_ATTACHMENT_SIZE=5000000 # IN BYTES
+      - SET_MESSAGES_AS_SEEN=FALSE
+      - DISABLED_CALLBACKS=message_ack|message_reaction
+    volumes:
+      - ./docker-volumes/whatsapp-sessions:/usr/src/app/sessions
+    networks:
+      - proxy
+  frontend:
+    build:
+      context: ./account-statement-new
+      dockerfile: Dockerfile
+    #ports:
+    #  - "8082:80"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=/api
+      #- API_URL=/api
+    networks:
+      - proxy
+
+  db:
+    image: postgres:latest
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: account-statement
+    volumes:
+      - ./docker-volumes/postgres_data:/var/lib/postgresql/data
+  proxy:
+    image: 'docker.io/jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    volumes:
+      - ./docker-volumes/proxy/data:/data
+      - ./docker-volumes/proxy/letsencrypt:/etc/letsencrypt
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    driver: bridge

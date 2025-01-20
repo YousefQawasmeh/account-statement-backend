@@ -23,6 +23,7 @@ export const updateUser = async (findOneBy: { cardId: number } | { id: string },
     const user = await User.findOneBy(findOneBy);
     if (user) {
       if (data.name !== undefined) user.name = data.name;
+      if (data.subName !== undefined) user.subName = data.subName;
       if (data.phone !== undefined) user.phone = data.phone;
       if (data.notes !== undefined) user.notes = data.notes;
       if (data.active !== undefined) user.active = data.active;
@@ -46,6 +47,7 @@ export const createUser = async (data: any) => {
     const newCardId = await getNewCardId(data.type);
     const newUser = new User();
     newUser.name = data.name;
+    newUser.subName = data.subName;
     newUser.phone = data.phone;
     newUser.notes = data.notes;
     newUser.cardId = newCardId;

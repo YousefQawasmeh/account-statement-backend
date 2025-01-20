@@ -4,7 +4,10 @@ import db from '../db/index.js';
 import { User } from '../db/entity/User.js';
 import { RecordType } from '../db/entity/RecordType.js';
 import { Between, IsNull, Not } from 'typeorm';
-
+import { sendWhatsAppMsg_API } from '../services/whatsapp.js';
+import { Check } from '../db/entity/Check.js';
+import { Bank } from '../db/entity/Bank.js';
+import { Image } from '../db/entity/Image.js';
 const router = express.Router();
 
 const filtersKeys: { [key: string]: string | number } = {
@@ -25,6 +28,9 @@ const getFilters = async (req: any) => {
       const DBKey = filtersKeys[key];
       let value: any = req.query[key];
       if (DBKey === 'user') {
+        /*
+        * @todo: get user by id .... there is a problem here when the key is 'userId' will not find the userId in the database in the users table then throws an error
+        */
         const user = await User.findOneBy({ [key]: req.query[key] });
         value = user
       }
@@ -42,28 +48,74 @@ const getFilters = async (req: any) => {
 
       filters[DBKey] = value;
     }
-    }
+  }
   return filters;
 }
 
 
+const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: number, notes: string, date: Date }) => {
+  const userNo = user.phone?.length >= 9 && user.phone.length !== 12 ? ("972" + user.phone.slice(-9)) : user.phone
 
+  const displayName = (amount >= 0 && user.subName) ? `عزيزي ${user.subName}، ` : "";
+  notes = notes ? ` ( ${notes})` : ""
+  let dateStr = new Date(date).toLocaleDateString("en-GB", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  })
+  // example for dateStr: 13/05/2023
+  dateStr = dateStr.replace(/\b0?7\/10\b/, " _*7 اكتوبر🔻*_ ");
+
+  try {
+    if (user.type.id === 1 && userNo) {
+      const newTotal = user.total + amount
+      const total = (newTotal >= 0 ? "عليكم: " : "لكم: ") + (newTotal >= 0 ? newTotal : newTotal * -1)
+      const msgs = [
+        `${displayName}تم تسجيل شراءك${notes} بمبلغ ${amount} شيكل من سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدكم الحالي: ${total} شيكل.`,
+        `شكرًا لك، ${displayName} على تسديدك مبلغ ${amount * -1} شيكل لحسابكم في سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدك الحالي: ${total} شيكل.`
+      ]
+      await sendWhatsAppMsg_API(+userNo, amount >= 0 ? msgs[0] : msgs[1]);
+    }
+    else {
+      await sendWhatsAppMsg_API(972566252561, `did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
+    }
+
+  } catch (error) {
+    console.log(error);
+    try {
+      await sendWhatsAppMsg_API(972566252561, ` ERROR: did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
+    }
+    catch (error) {
+      console.log(error);
+    }
+    // res.status(500).send("Something went wrong: " + error);
+  }
+}
 
 router.get('/', async (req, res) => {
   const filters = await getFilters(req);
   const records = await Record.find({ where: { ...filters }, order: { date: 'ASC', createdAt: 'ASC' }, relations: ['user', 'type'] });
-  res.send(records);
+  res.send(records.map(({ checksFrom, checksTo, images, ...record }) => {
+    return {
+      ...record,
+      checks: [...(checksFrom || []), ...(checksTo || [])].map((check: any) => {
+        check.images = check.images.map((image: { name: string; }) => image.name);
+        return check
+      }),
+      images: images.map(image => image.name),
+    }
+  }));
 });
 
 router.get('/all', async (req, res) => {
   const filters = await getFilters(req);
-  const records = await Record.find({where: {...filters,}, withDeleted: true, relations: ['user', 'type'] } );
+  const records = await Record.find({ where: { ...filters, }, order: { date: 'ASC', createdAt: 'ASC' }, withDeleted: true, relations: ['user', 'type'] });
   res.send(records);
 });
 
 router.get('/deleted', async (req, res) => {
   const filters = await getFilters(req);
-  const records = await Record.find({withDeleted: true, relations: ['user', 'type'], where: {deletedAt: Not(IsNull()), ...filters} } );
+  const records = await Record.find({ withDeleted: true, relations: ['user', 'type'], where: { deletedAt: Not(IsNull()), ...filters } });
   res.send(records);
 });
 
@@ -80,7 +132,7 @@ router.get('/:id', async (req, res) => {
 router.get('/user/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
-    const records = await Record.find({ where: { user: {id: userId} }, relations: ['type'] });
+    const records = await Record.find({ where: { user: { id: userId } }, relations: ['user', 'type'] });
     res.send(records);
   } catch (error) {
     res.status(404).send("User not found!")
@@ -97,7 +149,7 @@ router.get('/card/:cardId', async (req, res) => {
     //   return;
     // }
     // const records = await Record.find({ where: { user: {cardId: user.cardId} }, relations: ['type'] });
-    const records = await Record.find({ where: { user: {cardId: cardId} }, relations: ['type'] });
+    const records = await Record.find({ where: { user: { cardId: cardId } }, relations: ['user', 'type'] });
     // const records = await Record.find({ where: { user: user.id }, relations: [ 'users', 'type'] });
     res.send(records);
   } catch (error) {
@@ -107,29 +159,130 @@ router.get('/card/:cardId', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
+    if (!req.body.user) {
+      res.status(400).send("Missing user!");
+      return;
+    }
     const user = await User.findOneBy({ id: req.body.user });
     const recordType = await RecordType.findOneBy({ id: +req.body.type });
-    
+
     if (!user) {
       res.status(404).send("User not found!")
       return;
     }
-    if(!recordType) {
+    if (!recordType) {
       res.status(404).send("RecordType not found!")
       return;
+    }
+
+    if (!req.body.amount) {
+      res.status(400).send("Missing amount!");
+      return;
+    }
+    if (!req.body.date) {
+      res.status(400).send("Missing date!");
+      return;
+    }
+
+    const recordImages: Image[] = [];
+    const checksImages: Image[][] = [];
+    Array.isArray(req.files) && req.files?.forEach((file: any) => {
+      const image = new Image();
+      image.name = file?.filename;
+      image.path = file?.path;
+      image.updatedAt = new Date();
+      if (file.fieldname.startsWith('images[')) {
+        recordImages.push(image);
+      }
+      else if (file.fieldname.startsWith('checks[')) {
+        const ckeckNo = file.fieldname.match(/\[(\d+)\]/)?.[1];
+        if (checksImages[+ckeckNo]?.length > 0) {
+          checksImages[+ckeckNo].push(image);
+        }
+        else {
+          checksImages[+ckeckNo] = [image];
+        }
+      }
+    })
+
+    const checks: Check[] = [];
+    for (const checkDetails of (req.body?.checks || [])) {
+      if (checkDetails.id) {
+        const check = await Check.findOneBy({ id: checkDetails.id, available: true });
+        if (!check) {
+          return res.status(404).send("Check not found or not available!");
+        }
+        check.available = false;
+        await check.save();
+        checks.push(check);
+      }
+      else {
+        const bank = await Bank.findOneBy({ id: checkDetails.bankId });
+        if (!bank) {
+          return res.status(404).send("Bank not found!");
+        }
+
+        const check = new Check();
+        check.amount = checkDetails.amount;
+        check.checkNumber = checkDetails.checkNumber;
+        check.bank = bank;
+        check.available = checkDetails.available !== false;
+        check.dueDate = checkDetails.dueDate;
+        check.notes = checkDetails.notes;
+        checks.push(check);
+      }
     }
     const record = new Record();
     record.amount = req.body.amount;
     record.date = req.body.date;
     record.notes = req.body.notes;
     record.type = recordType;
-    // record.type = req.body.type;
     record.user = user;
+    // record.checks = checks;
 
     db.dataSource.transaction(async (transactionManager) => {
-      await transactionManager.save(record);
+      const savedRecord = await transactionManager.save(record);
+
+      checks.forEach(async (check, index) => {
+        if (check.available) {
+          check.fromRecord = savedRecord;
+        }
+        else {
+          check.available = false;
+          check.toRecord = savedRecord;
+        }
+        const savedCheck = await transactionManager.save(check);
+
+        for (const image of (checksImages[index] || [])) {
+          image.check = savedCheck;
+          // image.record = savedRecord;
+          await transactionManager.save(image);
+        }
+      })
+
+      for (const image of recordImages) {
+        image.record = savedRecord;
+        await transactionManager.save(image);
+      }
+
     }).then(async () => {
-      res.status(201).send(record);
+      await sendWhatsAppMsg(user, record);
+      const responseRecord = {
+        id: record.id,
+        amount: record.amount,
+        date: record.date,
+        notes: record.notes,
+        type: record.type,
+        user: record.user,
+        checks: checks.map(check => ({
+          id: check.id,
+          amount: check.amount,
+          checkNumber: check.checkNumber,
+          bank: check.bank,
+          available: check.available
+        }))
+      };
+      res.status(201).send(responseRecord);
     }).catch(error => {
       res.status(500).send("Something went wrong: " + error);
     });
@@ -149,9 +302,9 @@ router.put('/:id', async (req, res) => {
     if (req.body.date !== undefined) record.date = new Date(req.body.date);
     if (req.body.notes !== undefined) record.notes = req.body.notes;
     const updatedRecord = await record.save();
-    res.status(200).send({updatedRecord});
+    res.status(200).send({ updatedRecord });
   }
-  else{
+  else {
     res.status(404).send('Record not found!');
   }
 });
@@ -178,7 +331,22 @@ router.delete('/:id', async (req, res) => {
     }
 
     record.deletedAt = new Date();
+    // to do: need to delete the checks from the database not here
+    // record.checks.forEach(check => {
+    //   if(check.available){
+    //     check.deletedAt = new Date();
+    //   }
+    //   else{
+    //     check.available = true;
+    //     check.toRecord = null;
+    //   }
+    //   await check.save().catch(error => {
+    //     console.error(error);
+    //     res.status(500).send("Something went wrong, couldn't update check: " + error);
+    //   })
+    // });
     record.notes += ` ::: ${req.body.notes}`;
+
     await record.save();
 
     res.send('Record Deleted');
