@@ -159,6 +159,10 @@ router.get('/card/:cardId', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
+    if (!req.body.user) {
+      res.status(400).send("Missing user!");
+      return;
+    }
     const user = await User.findOneBy({ id: req.body.user });
     const recordType = await RecordType.findOneBy({ id: +req.body.type });
 
