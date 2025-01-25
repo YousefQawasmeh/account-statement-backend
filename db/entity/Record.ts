@@ -100,12 +100,22 @@ export class Record extends BaseEntity {
         }
 
         if (this.deletedAt !== null) {
+            const recordChecksNotAvailable = await Check.find({ where: { available: false, fromRecord: { id: this.id } } });
+            if (recordChecksNotAvailable.length > 0) {
+                throw ("it's not accepted to delete a record with checks already assigned to another record");
+            }
+
             this.deletedAt = new Date();
             await saveNewUserTotal(user, user.total - previousRecord.amount);
             await Check.createQueryBuilder()
                 .update()
-                .set({ deletedAt: new Date() })
-                .where("recordId = :recordId", { recordId: this.id })
+                .set({ toRecord: undefined })
+                .where("toRecordId = :recordId", { recordId: this.id })
+                .execute();
+            await Check.createQueryBuilder()
+                .update()
+                .set({ deletedAt: new Date(), available: false })
+                .where("fromRecordId = :recordId AND toRecordId IS NULL", { recordId: this.id })
                 .execute();
             return;
         }
