@@ -352,7 +352,8 @@ router.delete('/:id', async (req, res) => {
     res.send('Record Deleted');
 
   } catch (error) {
-    res.status(500).send('Something went wrong!');
+    console.error(error);
+    res.status(500).send(error);
   }
 });
 
