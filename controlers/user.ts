@@ -55,6 +55,8 @@ export const createUser = async (data: any) => {
     newUser.active = !!data.active;
     newUser.limit = data.limit;
     newUser.type = data.type;
+    newUser.currency = data.currency;
+
     return newUser.save()
 
   } catch (error) {

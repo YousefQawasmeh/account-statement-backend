@@ -29,7 +29,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.get('/:cardId', async (req, res) => {
+router.get('/card/:cardId', async (req, res) => {
   try {
     const cardId = Number(req.params.cardId);
     const user = await getUser({ cardId });
@@ -41,6 +41,10 @@ router.get('/:cardId', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
+    if (!req.body.type) return res.status(400).send("Type is required");
+    if (!req.body.name) return res.status(400).send("Name is required");
+    if (!req.body.currency) return res.status(400).send("Currency is required");
+
     const newUser = await createUser(req.body);
     res.status(201).send(newUser);
   }
