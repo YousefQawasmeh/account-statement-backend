@@ -184,6 +184,27 @@ router.post('/', async (req, res) => {
       return;
     }
 
+    for (let i = 0; i < req.body.checks.length; i++) {
+      const check = req.body.checks[i]
+      if (!+check.amount) {
+        res.status(400).send("Missing check [" + (i + 1) + "] amount!");
+        return;
+      }
+      if (!check.currency) {
+        res.status(400).send("Missing check [" + (i + 1) + "] currency!");
+        return;
+      }
+      if (!+check.bankId) {
+        res.status(400).send("Missing check [" + (i + 1) + "] bankId!");
+        return;
+      }
+      if (!check.dueDate) {
+        res.status(400).send("Missing check [" + (i + 1) + "] dueDate!");
+        return;
+      }
+    }
+
+
     const recordImages: Image[] = [];
     const checksImages: Image[][] = [];
     Array.isArray(req.files) && req.files?.forEach((file: any) => {

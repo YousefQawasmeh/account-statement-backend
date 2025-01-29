@@ -37,12 +37,19 @@ export class Check extends BaseEntity {
 
     @Column({ default: true })
     available!: boolean;
-    
+
     @Column()
     dueDate!: Date
 
-    @Column( { nullable: true, length: 256 })
+    @Column({ nullable: true, length: 256 })
     notes!: string
+
+    @Column({
+        type: "enum",
+        enum: ["شيكل", "دينار", "دولار"],
+        default: "شيكل"
+    })
+    currency!: string;
 
     @OneToMany(() => Image, image => image.check, { eager: true })
     images!: Image[]

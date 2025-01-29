@@ -13,7 +13,7 @@ export class User extends BaseEntity {
 
     @Column({ length: 70, nullable: false })
     name!: string;
-    
+
     @Column({ length: 70, nullable: true })
     subName!: string;
 
@@ -32,8 +32,16 @@ export class User extends BaseEntity {
     @Column({ default: 0 })
     limit!: number;
 
-    @Column( "float" , { default: 0 })
+    @Column("float", { default: 0 })
     total!: number;
+
+
+    @Column({
+        type: "enum",
+        enum: ["شيكل", "دينار", "دولار"],
+        default: "شيكل"
+    })
+    currency!: string;
 
     @OneToMany(() => Record, (record: Record) => record.user)
     records!: Record[];

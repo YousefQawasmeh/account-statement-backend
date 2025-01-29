@@ -6,12 +6,12 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
   const filters: any = {};
-  if(req.query.available === 'true') {
+  if (req.query.available === 'true') {
     filters['available'] = true
   }
-  const checks = await Check.find( { where: { ...filters }, relations: ['fromRecord', 'bank', 'fromRecord.user', 'toRecord', 'toRecord.user'] } );
+  const checks = await Check.find({ where: { ...filters }, relations: ['fromRecord', 'bank', 'fromRecord.user', 'toRecord', 'toRecord.user'] });
   const responseChecks = checks.map(check => {
-    return {...check, images: check.images.map(image => image.name)}
+    return { ...check, images: check.images.map(image => image.name) }
   })
   res.send(responseChecks);
 });
@@ -28,13 +28,17 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
+    if (!req.body.amount) return res.status(400).send("Amount is required");
+    if (!req.body.currency) return res.status(400).send("Currency is required");
+
     const check = new Check();
     check.amount = req.body.amount;
     check.checkNumber = req.body.checkNumber;
     // check.record = req.body.record;
     check.bank = req.body.bank;
     check.dueDate = req.body.dueDate;
-    check.available = req.body.available !== false ;
+    check.available = req.body.available !== false;
+    check.currency = req.body.currency;
     const newCheck = await check.save();
     res.status(201).send(newCheck);
   } catch (error) {
@@ -47,7 +51,7 @@ router.put('/:id', async (req, res) => {
     const id = Number(req.params.id);
     const check = await Check.findOne({ where: { id } });
     if (check) {
-        Object.assign(check, req.body);
+      Object.assign(check, req.body);
       await check.save();
       res.send(check);
     } else {
