@@ -71,22 +71,22 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
       const newTotal = user.total + amount
       const total = (newTotal >= 0 ? "عليكم: " : "لكم: ") + (newTotal >= 0 ? newTotal : newTotal * -1)
       const msgs = [
-        `${displayName}تم تسجيل شراءك${notes} بمبلغ ${amount} شيكل من سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدكم الحالي: ${total} شيكل.`,
-        `شكرًا لك، ${displayName} على تسديدك مبلغ ${amount * -1} شيكل لحسابكم في سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدك الحالي: ${total} شيكل.`
+        `${displayName}تم تسجيل شراءك${notes} بمبلغ ${amount} ${user.currency} من سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدكم الحالي: ${total} ${user.currency}.`,
+        `شكرًا لك، ${displayName} على تسديدك مبلغ ${amount * -1} ${user.currency} لحسابكم في سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدك الحالي: ${total} ${user.currency}.`
       ]
-      await sendWhatsAppMsg_API(+userNo, amount >= 0 ? msgs[0] : msgs[1]);
+      sendWhatsAppMsg_API(+userNo, amount >= 0 ? msgs[0] : msgs[1]);
     }
     else {
-      await sendWhatsAppMsg_API(972566252561, `did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
+      // sendWhatsAppMsg_API(972566252561, `did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
     }
 
   } catch (error) {
-    console.log(error);
+    console.error(error);
     try {
-      await sendWhatsAppMsg_API(972566252561, ` ERROR: did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
+      sendWhatsAppMsg_API(972566252561, ` ERROR: did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
     }
     catch (error) {
-      console.log(error);
+      console.error(error);
     }
     // res.status(500).send("Something went wrong: " + error);
   }
@@ -105,6 +105,35 @@ router.get('/', async (req, res) => {
       images: images.map(image => image.name),
     }
   }));
+
+  //   const query = await dataSource
+  //     .getRepository(Record)
+  //     .createQueryBuilder("record")
+  //     .leftJoinAndSelect("record.user", "user")
+  //     .leftJoinAndSelect("record.type", "type")
+  //     .leftJoinAndSelect("record.checks", "checks")
+  //     .leftJoinAndSelect("checks.fromRecord", "fromRecord")
+  //     .leftJoinAndSelect("checks.toRecord", "toRecord")
+  //     .orderBy("record.date", "ASC")
+  //     .addOrderBy("record.createdAt", "ASC")
+
+  // const queryFilters: any = req.query
+  // for (const key of Object.keys((queryFilters) as any)) {
+  //   if (filtersKeys[key]) {
+  //     if (key === 'date' && queryFilters[key]?.from && queryFilters[key]?.to) {
+  //       const fromDate = new Date(new Date(queryFilters[key].from).setHours(0, 0, 0, 0));
+  //       const toDate = new Date(new Date(queryFilters[key].to).setHours(23, 59, 59, 999));
+  //       query.andWhere(`record.date >= :fromDate`, { fromDate });
+  //       query.andWhere(`record.date <= :toDate`, { toDate });
+  //     }
+  //     else{
+  //       query.andWhere(`${filtersKeys[key]}.${key} = :value`, { value: queryFilters[key] }); 
+  //     }
+  //   }
+
+  // }
+  //   const records = await query.getMany();
+
 });
 
 router.get('/all', async (req, res) => {
@@ -184,7 +213,7 @@ router.post('/', async (req, res) => {
       return;
     }
 
-    for (let i = 0; i < req.body.checks.length; i++) {
+    for (let i = 0; i < req.body.checks?.length; i++) {
       const check = req.body.checks[i]
       if (!+check.amount) {
         res.status(400).send("Missing check [" + (i + 1) + "] amount!");
