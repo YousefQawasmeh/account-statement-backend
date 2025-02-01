@@ -54,8 +54,7 @@ const getFilters = async (req: any) => {
 
 
 const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: number, notes: string, date: Date }) => {
-  // const userNo = user.phone?.length >= 9 && user.phone.length !== 12 ? ("972" + user.phone.slice(-9)) : user.phone
-  const userNos = user.phone?.split(',').map((phone: string) => phone.length >= 9 && phone.length !== 12 ? ("972" + phone.slice(-9)) : phone)
+  const userNo = user.phone?.length >= 9 && user.phone.length !== 12 ? ("972" + user.phone.slice(-9)) : user.phone
 
   const displayName = (amount >= 0 && user.subName) ? `عزيزي ${user.subName}، ` : "";
   notes = notes ? ` ( ${notes})` : ""
@@ -68,31 +67,23 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
   dateStr = dateStr.replace(/\b0?7\/10\b/, " _*7 اكتوبر🔻*_ ");
 
   try {
-    if (user.type.id === 1 && userNos?.length > 0) {
+    if (user.type.id === 1 && userNo) {
       const newTotal = user.total + amount
       const total = (newTotal >= 0 ? "عليكم: " : "لكم: ") + (newTotal >= 0 ? newTotal : newTotal * -1)
       const msgs = [
         `${displayName}تم تسجيل شراءك${notes} بمبلغ ${amount} ${user.currency} من سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدكم الحالي: ${total} ${user.currency}.`,
         `شكرًا لك، ${displayName} على تسديدك مبلغ ${amount * -1} ${user.currency} لحسابكم في سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدك الحالي: ${total} ${user.currency}.`
       ]
-      userNos?.forEach((userNo: string) => {
-        try {
-          sendWhatsAppMsg_API(+userNo, amount >= 0 ? msgs[0] : msgs[1])
-        }
-        catch (error) {
-          console.error(error);
-          sendWhatsAppMsg_API(972566252561, ` ERROR: did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} (${user.subName}) Phone: ${user.phone}`)
-        }
-      });
+      sendWhatsAppMsg_API(+userNo, amount >= 0 ? msgs[0] : msgs[1]);
     }
     else {
-      // sendWhatsAppMsg_API(972566252561, `did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} (${user.subName}) Phone: ${user.phone}`);
+      // sendWhatsAppMsg_API(972566252561, `did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
     }
 
   } catch (error) {
     console.error(error);
     try {
-      sendWhatsAppMsg_API(972566252561, ` ERROR: did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} (${user.subName}) Phone: ${user.phone}`);
+      sendWhatsAppMsg_API(972566252561, ` ERROR: did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
     }
     catch (error) {
       console.error(error);
