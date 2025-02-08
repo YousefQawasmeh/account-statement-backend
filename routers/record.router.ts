@@ -72,8 +72,8 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
       const newTotal = user.total + amount
       const total = (newTotal >= 0 ? "عليكم: " : "لكم: ") + (newTotal >= 0 ? newTotal : newTotal * -1)
       const msgs = [
-        `${displayName}تم تسجيل شراءك${notes} بمبلغ ${amount} ${user.currency} من سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدكم الحالي: ${total} ${user.currency}.`,
-        `شكرًا لك، ${displayName} على تسديدك مبلغ ${amount * -1} ${user.currency} لحسابكم في سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدك الحالي: ${total} ${user.currency}.`
+        `${displayName}تم قيد مبلغ ${amount} ${user.currency} عليكم ${notes} لحساب سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدكم الحالي: ${total} ${user.currency}.`,
+        `شكرًا لك، ${displayName} على تسديدك مبلغ ${amount * -1} ${user.currency} ${notes} لحسابكم في سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدك الحالي: ${total} ${user.currency}.`
       ]
       user.phone && sendWhatsAppMsg_API(user.phone, amount >= 0 ? msgs[0] : msgs[1]);
       user.phone2 && sendWhatsAppMsg_API(user.phone2, amount >= 0 ? msgs[0] : msgs[1]);
