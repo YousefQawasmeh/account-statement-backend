@@ -217,6 +217,7 @@ router.post('/', async (req, res) => {
 
     for (let i = 0; i < req.body.checks?.length; i++) {
       const check = req.body.checks[i]
+      if(!!check.id) continue;
       if (!+check.amount) {
         res.status(400).send("Missing check [" + (i + 1) + "] amount!");
         return;
@@ -234,7 +235,6 @@ router.post('/', async (req, res) => {
         return;
       }
     }
-
 
     const recordImages: Image[] = [];
     const checksImages: Image[][] = [];
@@ -295,7 +295,8 @@ router.post('/', async (req, res) => {
     db.dataSource.transaction(async (transactionManager) => {
       const savedRecord = await transactionManager.save(record);
 
-      checks.forEach(async (check, index) => {
+      for (let index = 0; index < checks.length; index++) {
+        const check = checks[index];
         if (check.available) {
           check.fromRecord = savedRecord;
         }
@@ -305,12 +306,11 @@ router.post('/', async (req, res) => {
         }
         const savedCheck = await transactionManager.save(check);
 
-        for (const image of (checksImages[index] || [])) {
+        for (const image of checksImages[index] || []) {
           image.check = savedCheck;
-          // image.record = savedRecord;
           await transactionManager.save(image);
         }
-      })
+      }
 
       for (const image of recordImages) {
         image.record = savedRecord;
@@ -318,24 +318,23 @@ router.post('/', async (req, res) => {
       }
 
     }).then(async () => {
-      await sendWhatsAppMsg(user, record);
+      sendWhatsAppMsg(user, record).catch(error => {
+        console.error("Send whatsapp msg failed:", error);
+      });
       const responseRecord = {
-        id: record.id,
-        amount: record.amount,
-        date: record.date,
-        notes: record.notes,
-        type: record.type,
-        user: record.user,
-        checks: checks.map(check => ({
+        ...record,
+        checks: checks.map((check, index) => ({
           id: check.id,
           amount: check.amount,
           checkNumber: check.checkNumber,
           bank: check.bank,
-          available: check.available
+          available: check.available,
+          images: checksImages[index]?.map(image => image.name)
         }))
       };
       res.status(201).send(responseRecord);
     }).catch(error => {
+      console.error("Save record transaction failed:", error);
       res.status(500).send("Something went wrong: " + error);
     });
 
