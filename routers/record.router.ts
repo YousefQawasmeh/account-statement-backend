@@ -54,7 +54,6 @@ const getFilters = async (req: any) => {
 
 
 const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: number, notes: string, date: Date }) => {
-  const userNo = user.phone?.length >= 9 && user.phone.length !== 12 ? ("972" + user.phone.slice(-9)) : user.phone
 
   const displayName = (amount >= 0 && user.subName) ? `عزيزي ${user.subName}، ` : "";
   notes = notes ? ` ( ${notes})` : ""
@@ -67,14 +66,17 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
   dateStr = dateStr.replace(/\b0?7\/10\b/, " _*7 اكتوبر🔻*_ ");
 
   try {
-    if (user.type.id === 1 && userNo) {
+    if (!user.phone) sendWhatsAppMsg_API("972566252561", `لا يوجد رقم للمستخدم ${user.name} (${user.subName})`);
+
+    if (user.type.id === 1) {
       const newTotal = user.total + amount
       const total = (newTotal >= 0 ? "عليكم: " : "لكم: ") + (newTotal >= 0 ? newTotal : newTotal * -1)
       const msgs = [
-        `${displayName}تم تسجيل شراءك${notes} بمبلغ ${amount} ${user.currency} من سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدكم الحالي: ${total} ${user.currency}.`,
-        `شكرًا لك، ${displayName} على تسديدك مبلغ ${amount * -1} ${user.currency} لحسابكم في سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدك الحالي: ${total} ${user.currency}.`
+        `${displayName}تم قيد مبلغ ${amount} ${user.currency} عليكم ${notes} لحساب سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدكم الحالي: ${total} ${user.currency}.`,
+        `شكرًا لك، ${displayName} على تسديدك مبلغ ${amount * -1} ${user.currency} ${notes} لحسابكم في سوبرماركت أبو دعجان بتاريخ ${dateStr}. رصيدك الحالي: ${total} ${user.currency}.`
       ]
-      sendWhatsAppMsg_API(+userNo, amount >= 0 ? msgs[0] : msgs[1]);
+      user.phone && sendWhatsAppMsg_API(user.phone, amount >= 0 ? msgs[0] : msgs[1]);
+      user.phone2 && sendWhatsAppMsg_API(user.phone2, amount >= 0 ? msgs[0] : msgs[1]);
     }
     else {
       // sendWhatsAppMsg_API(972566252561, `did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
@@ -83,7 +85,7 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
   } catch (error) {
     console.error(error);
     try {
-      sendWhatsAppMsg_API(972566252561, ` ERROR: did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} Phone: ${user.phone} --- ${userNo}`);
+      sendWhatsAppMsg_API("972566252561", ` ERROR: did not send whatsapp msg to ID:${user.id} Card ID: ${user.cardId} Name: ${user.name} (${user.subName}) Phone: ${user.phone} --- ${[user.phone, user.phone2]}`);
     }
     catch (error) {
       console.error(error);
@@ -215,6 +217,7 @@ router.post('/', async (req, res) => {
 
     for (let i = 0; i < req.body.checks?.length; i++) {
       const check = req.body.checks[i]
+      if(!!check.id) continue;
       if (!+check.amount) {
         res.status(400).send("Missing check [" + (i + 1) + "] amount!");
         return;
@@ -232,7 +235,6 @@ router.post('/', async (req, res) => {
         return;
       }
     }
-
 
     const recordImages: Image[] = [];
     const checksImages: Image[][] = [];
@@ -293,7 +295,8 @@ router.post('/', async (req, res) => {
     db.dataSource.transaction(async (transactionManager) => {
       const savedRecord = await transactionManager.save(record);
 
-      checks.forEach(async (check, index) => {
+      for (let index = 0; index < checks.length; index++) {
+        const check = checks[index];
         if (check.available) {
           check.fromRecord = savedRecord;
         }
@@ -303,12 +306,11 @@ router.post('/', async (req, res) => {
         }
         const savedCheck = await transactionManager.save(check);
 
-        for (const image of (checksImages[index] || [])) {
+        for (const image of checksImages[index] || []) {
           image.check = savedCheck;
-          // image.record = savedRecord;
           await transactionManager.save(image);
         }
-      })
+      }
 
       for (const image of recordImages) {
         image.record = savedRecord;
@@ -316,24 +318,23 @@ router.post('/', async (req, res) => {
       }
 
     }).then(async () => {
-      await sendWhatsAppMsg(user, record);
+      sendWhatsAppMsg(user, record).catch(error => {
+        console.error("Send whatsapp msg failed:", error);
+      });
       const responseRecord = {
-        id: record.id,
-        amount: record.amount,
-        date: record.date,
-        notes: record.notes,
-        type: record.type,
-        user: record.user,
-        checks: checks.map(check => ({
+        ...record,
+        checks: checks.map((check, index) => ({
           id: check.id,
           amount: check.amount,
           checkNumber: check.checkNumber,
           bank: check.bank,
-          available: check.available
+          available: check.available,
+          images: checksImages[index]?.map(image => image.name)
         }))
       };
       res.status(201).send(responseRecord);
     }).catch(error => {
+      console.error("Save record transaction failed:", error);
       res.status(500).send("Something went wrong: " + error);
     });
 

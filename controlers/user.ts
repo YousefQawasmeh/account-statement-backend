@@ -25,6 +25,7 @@ export const updateUser = async (findOneBy: { cardId: number } | { id: string },
       if (data.name !== undefined) user.name = data.name;
       if (data.subName !== undefined) user.subName = data.subName;
       if (data.phone !== undefined) user.phone = data.phone;
+      if (data.phone2 !== undefined) user.phone2 = data.phone2;
       if (data.notes !== undefined) user.notes = data.notes;
       if (data.active !== undefined) user.active = data.active;
       if (data.limit !== undefined) user.limit = data.limit;
@@ -49,6 +50,7 @@ export const createUser = async (data: any) => {
     newUser.name = data.name;
     newUser.subName = data.subName;
     newUser.phone = data.phone;
+    newUser.phone2 = data.phone2;
     newUser.notes = data.notes;
     newUser.cardId = newCardId;
     // newUser.cardId = data.cardId;
@@ -58,7 +60,6 @@ export const createUser = async (data: any) => {
     newUser.currency = data.currency;
 
     return newUser.save()
-
   } catch (error) {
     console.error(error);
     throw ("Something went wrong, " + error);
