@@ -39,6 +39,17 @@ router.get('/card/:cardId', async (req, res) => {
   }
 });
 
+router.get('/usersWithMismatchedTotal', async (_, res) => {
+  const totalByUsers = await User.createQueryBuilder('user')
+    .innerJoin('user.records', 'record')
+    .select('user.id, user.cardId, user.name, user.subName, user.total, SUM(record.amount) as totalRecordsAmount')
+    .groupBy('user.id')
+    .having('SUM(record.amount) <> user.total')
+    .getRawMany();
+
+  res.send(totalByUsers);
+});
+
 router.post('/', async (req, res) => {
   try {
     if (!req.body.type) return res.status(400).send("Type is required");
@@ -57,7 +68,11 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const id = req.params.id;
   try {
-    const updatedUser = await updateUser({ id }, req.body);
+    const keysCanNotBeUpdated = ["id", "cardId", "type", "total"];
+    const updatedUser = await updateUser({ id }, Object.keys(req.body)?.reduce((acc: any, key: string) => {
+      if (keysCanNotBeUpdated.includes(key)) return acc
+      return ({ ...acc, [key]: req.body[key] })
+    }, {}));
     if (updatedUser) {
       res.status(200).send(updatedUser);
     }
