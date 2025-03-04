@@ -205,8 +205,7 @@ router.post('/', async (req, res) => {
       res.status(404).send("RecordType not found!")
       return;
     }
-
-    if (!req.body.amount) {
+    if (isNaN(+req.body.amount)) {
       res.status(400).send("Missing amount!");
       return;
     }
@@ -285,7 +284,7 @@ router.post('/', async (req, res) => {
       }
     }
     const record = new Record();
-    record.amount = req.body.amount;
+    record.amount = +req.body.amount;
     record.date = req.body.date;
     record.notes = req.body.notes;
     record.type = recordType;
