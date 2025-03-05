@@ -343,12 +343,13 @@ router.post('/', async (req, res) => {
   }
 });
 
-// // this code will be commented out because its not good thing to update records
 router.put('/:id', async (req, res) => {
   const id = req.params.id;
   const record = await Record.findOneBy({ id });
   if (record) {
-    if (req.body.amount !== undefined) record.amount = req.body.amount;
+    if(req.body.amount !== undefined && isNaN(+req.body.amount)) res.status(400).send('Amount must be a number!');
+  
+    if (req.body.amount !== undefined) record.amount = +req.body.amount;
     if (req.body.date !== undefined) record.date = new Date(req.body.date);
     if (req.body.notes !== undefined) record.notes = req.body.notes;
     const updatedRecord = await record.save();
