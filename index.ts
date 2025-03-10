@@ -9,8 +9,10 @@ import recordTypeRouter from './routers/recordType.router.js';
 import checkRouter from './routers/check.router.js';
 import BankRouter from './routers/bank.router.js';
 import imageRouter from './routers/image.router.js';
+import reminderRouter from './routers/reminder.router.js';
 import uploadFiles from './middleware/uploadFiles.js';
 import cors from 'cors';
+import {initializeRemindersCron} from './services/remindersCron.js'
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -34,6 +36,8 @@ app.use('/api/banks', BankRouter);
 
 app.use('/api/images', imageRouter);
 
+app.use('/api/reminders', reminderRouter);
+
 // app.get('*', function (req, res) {
 //   res.sendFile(path.join(__dirname, '../dist copy', 'index.html'));
 // });
@@ -55,6 +59,8 @@ app.use('/api/images', imageRouter);
 app.listen(port, () => {
   console.log(`The app is listening on port ${port}`);
   db.initialize();
+
+  initializeRemindersCron();
   
   // whatsappInit();
 });

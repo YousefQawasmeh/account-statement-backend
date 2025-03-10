@@ -1,6 +1,7 @@
 import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Record } from "./Record.js";
 import { UserType } from "./UserType.js";
+import { Reminder } from "./Reminder.js";
 
 
 @Entity()
@@ -57,5 +58,8 @@ export class User extends BaseEntity {
         }
     )
     type!: UserType;
+
+    @OneToMany(() => Reminder, (reminder: Reminder) => reminder.user)
+    reminders!: Reminder[]
 
 }
