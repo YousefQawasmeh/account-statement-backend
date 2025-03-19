@@ -1,6 +1,6 @@
 import express from 'express';
 import { User } from '../db/entity/User.js';
-import { createUser, getNewCardId, getAllUsers, getUser, updateUser } from '../controlers/index.js'
+import { createUser, getNewCardId, getAllUsers, getUser, updateUser, getUsersWithMismatchedTotal } from '../controlers/index.js'
 const router = express.Router();
 
 router.get('/', async (req, res) => {
@@ -17,6 +17,11 @@ router.get('/newCardId/:cardType', async (req, res) => {
     console.error(error);
     res.status(500).send("Something went wrong, " + error);
   }
+});
+
+router.get('/usersWithMismatchedTotal', async (_, res) => {
+  const usersWithMismatchedTotal = await getUsersWithMismatchedTotal();
+  res.send(usersWithMismatchedTotal);
 });
 
 router.get('/:id', async (req, res) => {
@@ -37,17 +42,6 @@ router.get('/card/:cardId', async (req, res) => {
   } catch (error) {
     res.status(404).send("User not found!")
   }
-});
-
-router.get('/usersWithMismatchedTotal', async (_, res) => {
-  const totalByUsers = await User.createQueryBuilder('user')
-    .innerJoin('user.records', 'record')
-    .select('user.id, user.cardId, user.name, user.subName, user.total, SUM(record.amount) as totalRecordsAmount')
-    .groupBy('user.id')
-    .having('SUM(record.amount) <> user.total')
-    .getRawMany();
-
-  res.send(totalByUsers);
 });
 
 router.post('/', async (req, res) => {
