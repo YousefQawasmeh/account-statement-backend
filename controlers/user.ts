@@ -28,6 +28,7 @@ export const updateUser = async (findOneBy: { cardId: number } | { id: string },
       if (data.phone2 !== undefined) user.phone2 = data.phone2;
       if (data.notes !== undefined) user.notes = data.notes;
       if (data.active !== undefined) user.active = data.active;
+      if (data.hidden !== undefined) user.hidden = data.hidden;
       if (data.limit !== undefined) user.limit = data.limit;
       // if (data.type !== undefined) {
       //   const userType = await UserType.findOneBy({ id: data.type });
@@ -55,6 +56,7 @@ export const createUser = async (data: any) => {
     newUser.cardId = newCardId;
     // newUser.cardId = data.cardId;
     newUser.active = !!data.active;
+    newUser.hidden = !!data.hidden;
     newUser.limit = data.limit;
     newUser.type = data.type;
     newUser.currency = data.currency;
