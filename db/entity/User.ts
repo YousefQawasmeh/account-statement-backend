@@ -32,6 +32,9 @@ export class User extends BaseEntity {
 
     @Column()
     active: boolean = true;
+    
+    @Column({ default: false })
+    hidden: boolean = false;
 
     @Column({ default: 0 })
     limit!: number;
