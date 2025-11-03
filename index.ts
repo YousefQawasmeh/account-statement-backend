@@ -10,6 +10,7 @@ import checkRouter from './routers/check.router.js';
 import BankRouter from './routers/bank.router.js';
 import imageRouter from './routers/image.router.js';
 import reminderRouter from './routers/reminder.router.js';
+import reportRouter from './routers/report.router.js';
 import uploadFiles from './middleware/uploadFiles.js';
 import cors from 'cors';
 import {initializeRemindersCron} from './services/remindersCron.js'
@@ -37,6 +38,8 @@ app.use('/api/banks', BankRouter);
 app.use('/api/images', imageRouter);
 
 app.use('/api/reminders', reminderRouter);
+
+app.use('/api/reports', reportRouter);
 
 // app.get('*', function (req, res) {
 //   res.sendFile(path.join(__dirname, '../dist copy', 'index.html'));
