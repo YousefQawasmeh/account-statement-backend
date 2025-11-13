@@ -14,27 +14,28 @@ export const getUsersWithMismatchedTotal = async () => {
 
 
 export const getOverdueUsersByDays = async (days: number) => {
-    // Find users with total > 0 whose latest record date is older than X days
-    const threshold = new Date();
-    threshold.setHours(0, 0, 0, 0);
-    threshold.setDate(threshold.getDate() - days);
+  // Find users with total > 0 whose latest record date is older than X days
+  const threshold = new Date();
+  threshold.setHours(0, 0, 0, 0);
+  threshold.setDate(threshold.getDate() - days);
 
-    const overdueUsers = await User.createQueryBuilder('user')
-        .leftJoin('user.records', 'record', 'record.amount < 0') // نربط فقط سجلات الدفعات
-        .select('user.id', 'id')
-        .addSelect('user.name', 'name')
-        .addSelect('user.phone', 'phone')
-        .addSelect('user.total', 'total')
-        .addSelect('user.currency', 'currency')
-        .addSelect('MAX(record.date)', 'lastPaymentDate')
-        .where('user.total > 0') // شرط وجود ذمة
-        .groupBy('user.id')
-        .addGroupBy('user.name')
-        .addGroupBy('user.phone')
-        .addGroupBy('user.total')
-        .having('MAX(record.date) IS NULL') // ما دفع ولا مرة
-        .orHaving('MAX(record.date) <= :threshold', { threshold: threshold.toISOString() }) // آخر دفعة قبل 35 يوم
-        .getRawMany();
+  const overdueUsers = await User.createQueryBuilder('user')
+    .leftJoin('user.records', 'record')
+    .select('user.id', 'id')
+    .addSelect('user.name', 'name')
+    .addSelect('user.phone', 'phone')
+    .addSelect('user.total', 'total')
+    .addSelect('user.currency', 'currency')
+    .addSelect('MAX(CASE WHEN record.amount < 0 THEN record.date END)', 'lastPaymentDate')
+    .addSelect('MAX(CASE WHEN record.amount > 0 THEN record.date END)', 'lastPurchaseDate')
+    .where('user.total > 0')
+    .groupBy('user.id')
+    .having(`(
+      MAX(CASE WHEN record.amount < 0 THEN record.date END) IS NULL
+      OR MAX(CASE WHEN record.amount < 0 THEN record.date END) <= NOW() - INTERVAL '${days} days'
+  )`)
+    .andHaving(`MAX(CASE WHEN record.amount > 0 THEN record.date END) <= NOW() - INTERVAL '${days} days'`)
+    .getRawMany();
 
-    return overdueUsers;
+  return overdueUsers;
 }
