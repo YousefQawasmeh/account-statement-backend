@@ -110,9 +110,10 @@ export const sendRemindersToOverdueUsers = async (overdueUsers: any[]) => {
     await sendWhatsAppMsg_API("0566252561", `Sent overdue messages to ${overdueUsers.length} users.`);
     await sendWhatsAppMsg_API("0599252561", `Sent overdue messages to ${overdueUsers.length} users.`);
 }
-export const sendRemindersToOverdueUsersByIDs = async (req: Request, res: Response) => {
-    const { usersIDs } = req.body;
-    User.findBy({ id: In(usersIDs) })
+
+export const sendRemindersToOverdueUsersByIds = async (req: Request, res: Response) => {
+    const { usersIds } = req.body;
+    User.findBy({ id: In(usersIds) })
         .then(users => {
             sendRemindersToOverdueUsers(users);
             console.log(`Sending reminders to users: ${users.map(u => u.id).join(", ")}`);
