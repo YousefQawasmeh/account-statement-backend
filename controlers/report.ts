@@ -24,11 +24,13 @@ export const getOverdueUsersByDays = async (days: number) => {
     .select('user.id', 'id')
     .addSelect('user.name', 'name')
     .addSelect('user.phone', 'phone')
+    .addSelect('user.phone2', 'phone2')
     .addSelect('user.total', 'total')
     .addSelect('user.currency', 'currency')
     .addSelect('MAX(CASE WHEN record.amount < 0 THEN record.date END)', 'lastPaymentDate')
     .addSelect('MAX(CASE WHEN record.amount > 0 THEN record.date END)', 'lastPurchaseDate')
     .where('user.total > 0')
+    .andWhere('user.typeId = 1') // الزبائن فقط بدون التجار
     .groupBy('user.id')
     .having(`(
       MAX(CASE WHEN record.amount < 0 THEN record.date END) IS NULL
