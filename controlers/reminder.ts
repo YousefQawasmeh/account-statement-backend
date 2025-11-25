@@ -87,6 +87,7 @@ export const sendRemindersToOverdueUsers = async (overdueUsers: any[]) => {
 
     for (const u of overdueUsers) {
         const phone = u.phone;
+        const phone2 = u.phone2;
         if (!phone) {
             try {
                 await sendWhatsAppMsg_API("0566252561", `${u.name || ''} has overdue balance of ${u.total} but no phone number available.`);
@@ -102,6 +103,10 @@ export const sendRemindersToOverdueUsers = async (overdueUsers: any[]) => {
         try {
             await sendWhatsAppMsg_API(phone, msg);
             console.log(`Sent overdue message to ${phone}`);
+            if (phone2) {
+                await sendWhatsAppMsg_API(phone2, msg);
+                console.log(`Sent overdue message to secondary phone2 ${phone2}`);
+            }
         } catch (err) {
             console.error('Failed sending overdue message to', phone, err);
         }
