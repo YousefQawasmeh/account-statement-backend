@@ -70,41 +70,42 @@ const initializeRemindersCron = () => {
         }
     });
 
-    // Runs every month on the 5th at 11:00 - send WhatsApp to users overdue 35+ days
-    cron.schedule('0 11 5 * *', async () => {
-        console.log('Running monthly overdue (35+ days) reminder cron job (5th of month)');
-        try {
-            const overdueUsers = await getOverdueUsersByDays(35);
-            await sendRemindersToOverdueUsers(overdueUsers);
-            console.log('Monthly overdue reminder cron job finished');
-        } catch (error) {
-            console.error('Error running monthly overdue reminder cron job:', error);
-        }
-    });
+    // // Runs every month on the 5th at 11:00 - send WhatsApp to users overdue 35+ days
+    // cron.schedule('0 11 5 * *', async () => {
+    //     console.log('Running monthly overdue (35+ days) reminder cron job (5th of month)');
+    //     try {
+    //         const overdueUsers = await getOverdueUsersByDays(35);
+    //         await sendRemindersToOverdueUsers(overdueUsers);
+    //         console.log('Monthly overdue reminder cron job finished');
+    //     } catch (error) {
+    //         console.error('Error running monthly overdue reminder cron job:', error);
+    //     }
+    // });
 
-    // Runs every month on the 15th at 11:00 - send WhatsApp to users overdue 65+ days
-    cron.schedule('0 11 15 * *', async () => {
-        console.log('Running monthly overdue (65+ days) reminder cron job (15th of month)');
-        try {
-            const overdueUsers = await getOverdueUsersByDays(65);
-            await sendRemindersToOverdueUsers(overdueUsers);
-            console.log('Monthly overdue reminder cron job finished');
-        } catch (error) {
-            console.error('Error running monthly overdue reminder cron job:', error);
-        }
-    });
+    // // Runs every month on the 15th at 11:00 - send WhatsApp to users overdue 65+ days
+    // cron.schedule('0 11 15 * *', async () => {
+    //     console.log('Running monthly overdue (65+ days) reminder cron job (15th of month)');
+    //     try {
+    //         const overdueUsers = await getOverdueUsersByDays(65);
+    //         await sendRemindersToOverdueUsers(overdueUsers);
+    //         console.log('Monthly overdue reminder cron job finished');
+    //     } catch (error) {
+    //         console.error('Error running monthly overdue reminder cron job:', error);
+    //     }
+    // });
 
-    // Runs every month on the 25th at 11:00 - send WhatsApp to users overdue 95+ days
-    cron.schedule('0 11 25 * *', async () => {
-        console.log('Running monthly overdue (95+ days) reminder cron job (25th of month)');
-        try {
-            const overdueUsers = await getOverdueUsersByDays(95);
-            await sendRemindersToOverdueUsers(overdueUsers);
-            console.log('Monthly overdue reminder cron job finished');
-        } catch (error) {
-            console.error('Error running monthly overdue reminder cron job:', error);
-        }
-    });
+    // // Runs every month on the 25th at 11:00 - send WhatsApp to users overdue 95+ days
+    // cron.schedule('0 11 25 * *', async () => {
+    //     console.log('Running monthly overdue (95+ days) reminder cron job (25th of month)');
+    //     try {
+    //         const overdueUsers = await getOverdueUsersByDays(95);
+    //         await sendRemindersToOverdueUsers(overdueUsers);
+    //         console.log('Monthly overdue reminder cron job finished');
+    //     } catch (error) {
+    //         console.error('Error running monthly overdue reminder cron job:', error);
+    //     }
+    // });
+
 }
 
 export { initializeRemindersCron }

@@ -23,6 +23,7 @@ export const getOverdueUsersByDays = async (days: number) => {
     .leftJoin('user.records', 'record')
     .select('user.id', 'id')
     .addSelect('user.name', 'name')
+    .addSelect('user.subName', 'subName')
     .addSelect('user.phone', 'phone')
     .addSelect('user.phone2', 'phone2')
     .addSelect('user.total', 'total')
