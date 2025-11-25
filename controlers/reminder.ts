@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { Reminder } from '../db/entity/Reminder';
 import { User } from '../db/entity/User';
+import { In } from 'typeorm';
+import { sendWhatsAppMsg_API } from '../services/whatsapp';
 
 export const getReminders = async (req: Request, res: Response) => {
     try {
@@ -78,3 +80,52 @@ export const deleteReminder = async (req: Request, res: Response) => {
         res.status(500).send("Internal Server Error");
     }
 };
+
+export const sendRemindersToOverdueUsers = async (overdueUsers: any[]) => {
+    await sendWhatsAppMsg_API("0566252561", `starting sending overdue messages`);
+    await sendWhatsAppMsg_API("0599252561", `starting sending overdue messages`);
+
+    for (const u of overdueUsers) {
+        const phone = u.phone;
+        const phone2 = u.phone2;
+        if (!phone) {
+            try {
+                await sendWhatsAppMsg_API("0566252561", `${u.name || ''} has overdue balance of ${u.total} but no phone number available.`);
+                await sendWhatsAppMsg_API("0599252561", `${u.name || ''} has overdue balance of ${u.total} but no phone number available.`);
+            }
+            catch (err) {
+                console.error('Failed sending overdue message to admin for user without phone', { name: u.name, userId: u.id, err });
+            }
+            continue; // skip users without phone
+
+        }
+        const msg = `السيد ${u.name || ''} المحترم، نود تذكيرك بضرورة الإسراع بتسديد المبلغ المستحق عليك لحساب سوبر ماركت أبو دعجان وقيمته ${u.total} ${u.currency || ''} شكرًا لتعاونكم معنا.`;
+        try {
+            await sendWhatsAppMsg_API(phone, msg);
+            console.log(`Sent overdue message to ${phone}`);
+            if (phone2) {
+                await sendWhatsAppMsg_API(phone2, msg);
+                console.log(`Sent overdue message to secondary phone2 ${phone2}`);
+            }
+        } catch (err) {
+            console.error('Failed sending overdue message to', phone, err);
+        }
+    }
+
+    await sendWhatsAppMsg_API("0566252561", `Sent overdue messages to ${overdueUsers.length} users.`);
+    await sendWhatsAppMsg_API("0599252561", `Sent overdue messages to ${overdueUsers.length} users.`);
+}
+
+export const sendRemindersToOverdueUsersByIds = async (req: Request, res: Response) => {
+    const { usersIds } = req.body;
+    User.findBy({ id: In(usersIds) })
+        .then(users => {
+            sendRemindersToOverdueUsers(users);
+            console.log(`Sending reminders to users: ${users.map(u => u.id).join(", ")}`);
+            res.status(200).send("Reminders are being sent");
+        })
+        .catch(error => {
+            console.error("Error fetching users for reminders:", error);
+            res.status(500).send("Internal Server Error");
+        });
+}
