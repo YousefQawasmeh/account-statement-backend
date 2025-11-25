@@ -117,8 +117,10 @@ export const sendRemindersToOverdueUsersByIds = async (req: Request, res: Respon
         .then(users => {
             sendRemindersToOverdueUsers(users);
             console.log(`Sending reminders to users: ${users.map(u => u.id).join(", ")}`);
+            res.status(200).send("Reminders are being sent");
         })
         .catch(error => {
             console.error("Error fetching users for reminders:", error);
+            res.status(500).send("Internal Server Error");
         });
 }
