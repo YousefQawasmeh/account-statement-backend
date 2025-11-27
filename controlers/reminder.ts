@@ -81,9 +81,11 @@ export const deleteReminder = async (req: Request, res: Response) => {
     }
 };
 
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export const sendRemindersToOverdueUsers = async (overdueUsers: any[]) => {
-    await sendWhatsAppMsg_API("0566252561", `starting sending overdue messages`);
-    await sendWhatsAppMsg_API("0599252561", `starting sending overdue messages`);
+    await sendWhatsAppMsg_API("0566252561", `starting sending overdue messages ${overdueUsers.length === 1 ? overdueUsers[0].name : ''}`);
+    await sendWhatsAppMsg_API("0599252561", `starting sending overdue messages ${overdueUsers.length === 1 ? overdueUsers[0].name : ''}`);
 
     for (const u of overdueUsers) {
         const phone = u.phone;
@@ -110,6 +112,9 @@ export const sendRemindersToOverdueUsers = async (overdueUsers: any[]) => {
         } catch (err) {
             console.error('Failed sending overdue message to', phone, err);
         }
+        // wait between messages to avoid rate limiting
+        const waitTimeMs = 1000 + Math.floor(Math.random() * 4000);
+        await wait(waitTimeMs);
     }
 
     await sendWhatsAppMsg_API("0566252561", `Sent overdue messages to ${overdueUsers.length} users.`);
