@@ -11,7 +11,9 @@ import BankRouter from './routers/bank.router.js';
 import imageRouter from './routers/image.router.js';
 import reminderRouter from './routers/reminder.router.js';
 import reportRouter from './routers/report.router.js';
+import accountRouter from './routers/account.router.js';
 import uploadFiles from './middleware/uploadFiles.js';
+import { authenticate, writeProtect } from './middleware/auth.js';
 import cors from 'cors';
 import {initializeRemindersCron} from './services/remindersCron.js'
 
@@ -21,49 +23,29 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// app.use(express.static(path.join(__dirname, '../dist copy')));
+app.use('/api/auth', accountRouter);
 
-app.use('/api/users', userRouter);
+app.use('/api/users', authenticate, writeProtect, userRouter);
 
-app.use('/api/records', uploadFiles.any(), recordRouter);
+app.use('/api/records', authenticate, writeProtect, uploadFiles.any(), recordRouter);
 
-app.use('/api/usertypes', userTypeRouter);
+app.use('/api/usertypes', authenticate, writeProtect, userTypeRouter);
 
-app.use('/api/recordtypes', recordTypeRouter);
+app.use('/api/recordtypes', authenticate, writeProtect, recordTypeRouter);
 
-app.use('/api/checks', checkRouter);
+app.use('/api/checks', authenticate, writeProtect, checkRouter);
 
-app.use('/api/banks', BankRouter);
+app.use('/api/banks', authenticate, writeProtect, BankRouter);
 
-app.use('/api/images', imageRouter);
+app.use('/api/images', authenticate, writeProtect, imageRouter);
 
-app.use('/api/reminders', reminderRouter);
+app.use('/api/reminders', authenticate, writeProtect, reminderRouter);
 
-app.use('/api/reports', reportRouter);
-
-// app.get('*', function (req, res) {
-//   res.sendFile(path.join(__dirname, '../dist copy', 'index.html'));
-// });
-// const whatsappInit = () => {
-//   Axios.get(`${process.env.WHATSAPP_URL}/session/status/${process.env.WHATSAPP_SESSION_ID}`)
-//   .then((res)=>{
-//     if(res.data.state !== "CONNECTED"){
-//       Axios.get(`${process.env.WHATSAPP_URL}/session/start/${process.env.WHATSAPP_SESSION_ID}`)
-//       .then((response) => {
-//           console.log(response.data);
-//         })
-//       }
-//   })
-//   .catch((error) => {
-//     console.error("whatsapp init error", error.response?.data);
-//   })
-// }
+app.use('/api/reports', authenticate, writeProtect, reportRouter);
 
 app.listen(port, () => {
   console.log(`The app is listening on port ${port}`);
   db.initialize();
 
   initializeRemindersCron();
-  
-  // whatsappInit();
 });
