@@ -161,6 +161,41 @@ export const updateAccount = async (req: AuthRequest, res: Response): Promise<vo
     }
 };
 
+export const changeMyPassword = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            res.status(400).json({ message: "currentPassword and newPassword are required" });
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            res.status(400).json({ message: "New password must be at least 6 characters" });
+            return;
+        }
+
+        const account = await Account.findOneBy({ id: req.account!.id });
+        if (!account) {
+            res.status(404).json({ message: "Account not found" });
+            return;
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, account.password);
+        if (!isMatch) {
+            res.status(401).json({ message: "Current password is incorrect" });
+            return;
+        }
+
+        account.password = await bcrypt.hash(newPassword, SALT_ROUNDS);
+        await account.save();
+
+        res.json({ message: "Password changed successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Something went wrong" });
+    }
+};
+
 export const deleteAccount = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
