@@ -70,8 +70,8 @@ async function insertDefaultData() {
     }
   }
 
-  const adminCount = await Account.count();
-  if (adminCount === 0) {
+const adminAccount = await Account.count();
+  if (adminAccount === 0) {
     const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD || "admin123";
     const hashed = await bcrypt.hash(defaultPassword, 10);
     const admin = new Account();
@@ -96,7 +96,7 @@ const initialize = () => {
           await sendWhatsAppMsg_API("972566252561", 'Backup done');
         } catch (err) {
           console.error('Backup failed:', err);
-          await sendWhatsAppMsg_API("972566252561", 'Backup failed: ' + err);
+          await sendWhatsAppMsg_API("972566252561", 'Backup failed: ' + JSON.stringify(err));
         }
       });
       console.log("Cron job scheduled for backup.");

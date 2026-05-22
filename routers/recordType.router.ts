@@ -1,15 +1,16 @@
 import express from 'express';
 import { RecordType } from '../db/entity/RecordType.js';
 import db from '../db/index.js';
+import { authenticate, adminOnly, anyRole, editorOrAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+router.get('/', authenticate, anyRole, async (req, res) => {
     const RecordsTypes = await RecordType.find();
     res.send(RecordsTypes);
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', authenticate, anyRole, async (req, res) => {
   try {
     const id = Number(req.params.id);
     const recordType = await RecordType.findOne({ where: { id } });
@@ -19,7 +20,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', authenticate, adminOnly, async (req, res) => {
   try {
     const recordType = new RecordType();
     recordType.title = req.body.title;
@@ -39,7 +40,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticate, editorOrAdmin, async (req, res) => {
   const id = Number(req.params.id);
   const recordType = await RecordType.findOneBy({ id });
   if (recordType) {
@@ -51,7 +52,7 @@ router.put('/:id', async (req, res) => {
 });
 
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticate, adminOnly, async (req, res) => {
   try {
     const id = Number( req.params.id);
     const recordType = await RecordType.findOneBy({ id });
