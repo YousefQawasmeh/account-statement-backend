@@ -7,11 +7,12 @@ import { Check } from './entity/Check.js';
 import { Bank } from './entity/Bank.js';
 import { Image } from './entity/Image.js';
 import { Reminder } from './entity/Reminder.js';
+import { Account } from './entity/Account.js';
 
 const dataSource = new DataSource({
     type: 'postgres',
     url: process.env.DATABASE_URL,
-    entities: [User, Record, RecordType, UserType, Check, Bank, Image, Reminder],
+    entities: [User, Record, RecordType, UserType, Check, Bank, Image, Reminder, Account],
     synchronize: process.env.NODE_ENV !== 'production',
     logging: true,
     // logging: process.env.NODE_ENV === 'development',

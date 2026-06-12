@@ -8,6 +8,8 @@ import { sendWhatsAppMsg_API } from '../services/whatsapp.js';
 import { Check } from '../db/entity/Check.js';
 import { Bank } from '../db/entity/Bank.js';
 import { Image } from '../db/entity/Image.js';
+import { authenticate, adminOnly, anyRole, editorOrAdmin } from "../middleware/auth.js";
+
 const router = express.Router();
 
 const filtersKeys: { [key: string]: string | number } = {
@@ -94,7 +96,7 @@ const sendWhatsAppMsg = async (user: User, { amount, notes, date }: { amount: nu
   }
 }
 
-router.get('/', async (req, res) => {
+router.get('/', authenticate, anyRole, async (req, res) => {
   const filters = await getFilters(req);
   const records = await Record.find({ where: { ...filters }, order: { date: 'ASC', createdAt: 'ASC' }, relations: ['user', 'type'] });
   res.send(records.map(({ checksFrom, checksTo, images, ...record }) => {
@@ -138,19 +140,19 @@ router.get('/', async (req, res) => {
 
 });
 
-router.get('/all', async (req, res) => {
+router.get('/all', authenticate, adminOnly, async (req, res) => {
   const filters = await getFilters(req);
   const records = await Record.find({ where: { ...filters, }, order: { date: 'ASC', createdAt: 'ASC' }, withDeleted: true, relations: ['user', 'type'] });
   res.send(records);
 });
 
-router.get('/deleted', async (req, res) => {
+router.get('/deleted', authenticate, adminOnly, async (req, res) => {
   const filters = await getFilters(req);
   const records = await Record.find({ withDeleted: true, relations: ['user', 'type'], where: { deletedAt: Not(IsNull()), ...filters } });
   res.send(records);
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', authenticate, anyRole, async (req, res) => {
   try {
     const id = req.params.id;
     const record = await Record.findOne({ where: { id }, relations: ['users', 'type'] });
@@ -160,7 +162,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.get('/user/:userId', async (req, res) => {
+router.get('/user/:userId', authenticate, anyRole, async (req, res) => {
   try {
     const userId = req.params.userId;
     const records = await Record.find({ where: { user: { id: userId } }, relations: ['user', 'type'] });
@@ -170,7 +172,7 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-router.get('/card/:cardId', async (req, res) => {
+router.get('/card/:cardId', authenticate, anyRole, async (req, res) => {
   try {
     const cardId = Number(req.params.cardId);
     // const user = await User.findOne({ where: { cardId } });
@@ -188,7 +190,7 @@ router.get('/card/:cardId', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', authenticate, editorOrAdmin, async (req, res) => {
   try {
     if (!req.body.user) {
       res.status(400).send("Missing user!");
@@ -343,7 +345,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticate, editorOrAdmin, async (req, res) => {
   const id = req.params.id;
   const record = await Record.findOneBy({ id });
   if (record) {
@@ -362,7 +364,7 @@ router.put('/:id', async (req, res) => {
 
 
 // delete Record will not delete it from the database it will just mark it as deleted
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticate, adminOnly, async (req, res) => {
   try {
     const id = req.params.id;
     const record = await Record.findOneBy({ id });
