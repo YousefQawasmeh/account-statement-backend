@@ -11,7 +11,7 @@ import BankRouter from './routers/bank.router.js';
 import imageRouter from './routers/image.router.js';
 import reminderRouter from './routers/reminder.router.js';
 import reportRouter from './routers/report.router.js';
-import accountRouter from './routers/account.router.js';
+import employeeRouter from './routers/employee.router.js';
 import uploadFiles from './middleware/uploadFiles.js';
 import { authenticate, writeProtect } from './middleware/auth.js';
 import cors from 'cors';
@@ -23,7 +23,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-app.use('/api/auth', accountRouter);
+app.use('/api/auth', employeeRouter);
 
 app.use('/api/users', authenticate, writeProtect, userRouter);
 

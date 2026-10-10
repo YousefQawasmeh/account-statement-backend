@@ -1,5 +1,5 @@
 import express from "express";
-import { login, register, getMe, getAllAccounts, updateAccount, deleteAccount, changeMyPassword } from "../controlers/account.js";
+import { login, register, getMe, getAllEmployees, updateEmployee, deleteEmployee, changeMyPassword } from "../controlers/employee.js";
 import { authenticate, adminOnly, anyRole } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -12,10 +12,10 @@ router.put("/me/password", authenticate, anyRole, changeMyPassword);
 
 router.post("/register", authenticate, adminOnly, register);
 
-router.get("/", authenticate, adminOnly, getAllAccounts);
+router.get("/", authenticate, adminOnly, getAllEmployees);
 
-router.put("/:id", authenticate, adminOnly, updateAccount);
+router.put("/:id", authenticate, adminOnly, updateEmployee);
 
-router.delete("/:id", authenticate, adminOnly, deleteAccount);
+router.delete("/:id", authenticate, adminOnly, deleteEmployee);
 
 export default router;

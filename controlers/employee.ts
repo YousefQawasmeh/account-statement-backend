@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { Account, AccountRole } from "../db/entity/Account.js";
+import { Employee, EmployeeRole } from "../db/entity/Employee.js";
 import { AuthRequest } from "../middleware/auth.js";
 
 const SALT_ROUNDS = 10;
@@ -15,32 +15,32 @@ export const register = async (req: AuthRequest, res: Response): Promise<void> =
             return;
         }
 
-        const validRoles = Object.values(AccountRole);
+        const validRoles = Object.values(EmployeeRole);
         if (role && !validRoles.includes(role)) {
             res.status(400).json({ message: `Invalid role. Must be one of: ${validRoles.join(", ")}` });
             return;
         }
 
-        const existing = await Account.findOneBy({ username });
+        const existing = await Employee.findOneBy({ username });
         if (existing) {
             res.status(409).json({ message: "Username already exists" });
             return;
         }
 
         const hashed = await bcrypt.hash(password, SALT_ROUNDS);
-        const account = new Account();
-        account.username = username;
-        account.password = hashed;
-        account.role = role || AccountRole.VIEWER;
+        const employee = new Employee();
+        employee.username = username;
+        employee.password = hashed;
+        employee.role = role || EmployeeRole.VIEWER;
 
-        await account.save();
+        await employee.save();
 
         res.status(201).json({
-            id: account.id,
-            username: account.username,
-            role: account.role,
-            active: account.active,
-            createdAt: account.createdAt,
+            id: employee.id,
+            username: employee.username,
+            role: employee.role,
+            active: employee.active,
+            createdAt: employee.createdAt,
         });
     } catch (error) {
         console.error(error);
@@ -57,18 +57,18 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        const account = await Account.findOneBy({ username });
-        if (!account) {
+        const employee = await Employee.findOneBy({ username });
+        if (!employee) {
             res.status(401).json({ message: "Invalid credentials" });
             return;
         }
 
-        if (!account.active) {
-            res.status(403).json({ message: "Account is disabled" });
+        if (!employee.active) {
+            res.status(403).json({ message: "Employee is disabled" });
             return;
         }
 
-        const isMatch = await bcrypt.compare(password, account.password);
+        const isMatch = await bcrypt.compare(password, employee.password);
         if (!isMatch) {
             res.status(401).json({ message: "Invalid credentials" });
             return;
@@ -76,17 +76,17 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
         const secret = process.env.JWT_SECRET!;
         const token = jwt.sign(
-            { id: account.id, username: account.username, role: account.role },
+            { id: employee.id, username: employee.username, role: employee.role },
             secret,
             { expiresIn: "7d" }
         );
 
         res.json({
             token,
-            account: {
-                id: account.id,
-                username: account.username,
-                role: account.role,
+            employee: {
+                id: employee.id,
+                username: employee.username,
+                role: employee.role,
             },
         });
     } catch (error) {
@@ -97,64 +97,64 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const account = await Account.findOneBy({ id: req.account!.id });
-        if (!account) {
-            res.status(404).json({ message: "Account not found" });
+        const employee = await Employee.findOneBy({ id: req.employee!.id });
+        if (!employee) {
+            res.status(404).json({ message: "Employee not found" });
             return;
         }
         res.json({
-            id: account.id,
-            username: account.username,
-            role: account.role,
-            active: account.active,
-            createdAt: account.createdAt,
+            id: employee.id,
+            username: employee.username,
+            role: employee.role,
+            active: employee.active,
+            createdAt: employee.createdAt,
         });
     } catch (error) {
         res.status(500).json({ message: "Something went wrong" });
     }
 };
 
-export const getAllAccounts = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getAllEmployees = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const accounts = await Account.find({ select: ["id", "username", "role", "active", "createdAt"] });
-        res.json(accounts);
+        const employees = await Employee.find({ select: ["id", "username", "role", "active", "createdAt"] });
+        res.json(employees);
     } catch (error) {
         res.status(500).json({ message: "Something went wrong" });
     }
 };
 
-export const updateAccount = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateEmployee = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-        const account = await Account.findOneBy({ id });
-        if (!account) {
-            res.status(404).json({ message: "Account not found" });
+        const employee = await Employee.findOneBy({ id });
+        if (!employee) {
+            res.status(404).json({ message: "Employee not found" });
             return;
         }
 
         if (req.body.role) {
-            const validRoles = Object.values(AccountRole);
+            const validRoles = Object.values(EmployeeRole);
             if (!validRoles.includes(req.body.role)) {
                 res.status(400).json({ message: `Invalid role. Must be one of: ${validRoles.join(", ")}` });
                 return;
             }
-            account.role = req.body.role;
+            employee.role = req.body.role;
         }
 
         if (typeof req.body.active === "boolean") {
-            account.active = req.body.active;
+            employee.active = req.body.active;
         }
 
         if (req.body.password) {
-            account.password = await bcrypt.hash(req.body.password, SALT_ROUNDS);
+            employee.password = await bcrypt.hash(req.body.password, SALT_ROUNDS);
         }
 
-        await account.save();
+        await employee.save();
         res.json({
-            id: account.id,
-            username: account.username,
-            role: account.role,
-            active: account.active,
+            id: employee.id,
+            username: employee.username,
+            role: employee.role,
+            active: employee.active,
         });
     } catch (error) {
         res.status(500).json({ message: "Something went wrong" });
@@ -175,20 +175,20 @@ export const changeMyPassword = async (req: AuthRequest, res: Response): Promise
             return;
         }
 
-        const account = await Account.findOneBy({ id: req.account!.id });
-        if (!account) {
-            res.status(404).json({ message: "Account not found" });
+        const employee = await Employee.findOneBy({ id: req.employee!.id });
+        if (!employee) {
+            res.status(404).json({ message: "Employee not found" });
             return;
         }
 
-        const isMatch = await bcrypt.compare(currentPassword, account.password);
+        const isMatch = await bcrypt.compare(currentPassword, employee.password);
         if (!isMatch) {
             res.status(401).json({ message: "Current password is incorrect" });
             return;
         }
 
-        account.password = await bcrypt.hash(newPassword, SALT_ROUNDS);
-        await account.save();
+        employee.password = await bcrypt.hash(newPassword, SALT_ROUNDS);
+        await employee.save();
 
         res.json({ message: "Password changed successfully" });
     } catch (error) {
@@ -196,23 +196,23 @@ export const changeMyPassword = async (req: AuthRequest, res: Response): Promise
     }
 };
 
-export const deleteAccount = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteEmployee = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
 
-        if (req.account!.id === id) {
-            res.status(400).json({ message: "Cannot delete your own account" });
+        if (req.employee!.id === id) {
+            res.status(400).json({ message: "Cannot delete your own employee" });
             return;
         }
 
-        const account = await Account.findOneBy({ id });
-        if (!account) {
-            res.status(404).json({ message: "Account not found" });
+        const employee = await Employee.findOneBy({ id });
+        if (!employee) {
+            res.status(404).json({ message: "Employee not found" });
             return;
         }
 
-        await account.remove();
-        res.json({ message: "Account deleted" });
+        await employee.remove();
+        res.json({ message: "Employee deleted" });
     } catch (error) {
         res.status(500).json({ message: "Something went wrong" });
     }

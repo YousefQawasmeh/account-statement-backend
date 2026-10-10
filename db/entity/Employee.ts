@@ -7,14 +7,14 @@ import {
     UpdateDateColumn,
 } from "typeorm";
 
-export enum AccountRole {
+export enum EmployeeRole {
     ADMIN = "admin",
     EDITOR = "editor",
     VIEWER = "viewer",
 }
 
 @Entity()
-export class Account extends BaseEntity {
+export class Employee extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
@@ -26,10 +26,10 @@ export class Account extends BaseEntity {
 
     @Column({
         type: "enum",
-        enum: AccountRole,
-        default: AccountRole.VIEWER,
+        enum: EmployeeRole,
+        default: EmployeeRole.VIEWER,
     })
-    role!: AccountRole;
+    role!: EmployeeRole;
 
     @Column({ default: true })
     active!: boolean;

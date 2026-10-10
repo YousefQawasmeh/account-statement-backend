@@ -28,7 +28,7 @@ dist/              - Compiled JavaScript output (git-ignored)
 
 JWT-based auth system with three roles:
 
-| Role | GET | POST/PUT/DELETE | Account Management |
+| Role | GET | POST/PUT/DELETE | Employee Management |
 |------|-----|-----------------|-------------------|
 | **admin** | ✅ | ✅ | ✅ |
 | **editor** | ✅ | ✅ | ❌ |
@@ -37,17 +37,17 @@ JWT-based auth system with three roles:
 ### Auth Endpoints (`/api/auth`)
 - `POST /api/auth/login` — public, returns JWT token (expires in 7 days)
 - `GET /api/auth/me` — any authenticated user
-- `POST /api/auth/register` — admin only, creates new accounts
-- `GET /api/auth/` — admin only, list all accounts
+- `POST /api/auth/register` — admin only, creates new employees
+- `GET /api/auth/` — admin only, list all employees
 - `PUT /api/auth/:id` — admin only, update role/password/active status
 - `DELETE /api/auth/:id` — admin only
 
-### Default Admin Account
-Created automatically on first startup if no accounts exist:
+### Default Admin Employee
+Created automatically on first startup if no employees exist:
 - Username: `admin`
 - Password: `admin123` (or `DEFAULT_ADMIN_PASSWORD` env var)
 
-### Entity: Account (`db/entity/Account.ts`)
+### Entity: Employee (`db/entity/Account.ts`)
 Fields: `id` (uuid), `username`, `password` (bcrypt), `role` (admin/editor/viewer), `active`, `createdAt`, `updatedAt`
 
 ### Middleware (`middleware/auth.ts`)

@@ -5,7 +5,7 @@ import cron from "node-cron";
 import backup from "../services/db-backup.js";
 import {sendWhatsAppMsg_API} from "../services/whatsapp.js";
 import { Bank } from "./entity/Bank.js";
-import { Account, AccountRole } from "./entity/Account.js";
+import { Employee, EmployeeRole } from "./entity/Employee.js";
 import bcrypt from "bcryptjs";
 
 async function insertDefaultData() {
@@ -70,16 +70,16 @@ async function insertDefaultData() {
     }
   }
 
-const adminAccount = await Account.count();
-  if (adminAccount === 0) {
+const adminEmployee = await Employee.count();
+  if (adminEmployee === 0) {
     const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD || "admin123";
     const hashed = await bcrypt.hash(defaultPassword, 10);
-    const admin = new Account();
+    const admin = new Employee();
     admin.username = "admin";
     admin.password = hashed;
-    admin.role = AccountRole.ADMIN;
+    admin.role = EmployeeRole.ADMIN;
     await admin.save();
-    console.log("Default admin account created — username: admin, password:", defaultPassword);
+    console.log("Default admin employee created — username: admin, password:", defaultPassword);
   }
 }
 
