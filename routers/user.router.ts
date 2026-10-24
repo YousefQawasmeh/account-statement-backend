@@ -1,14 +1,16 @@
 import express from 'express';
 import { User } from '../db/entity/User.js';
 import { createUser, getNewCardId, getAllUsers, getUser, updateUser, getUsersWithMismatchedTotal } from '../controlers/index.js'
+import { authenticate, adminOnly, anyRole, editorOrAdmin } from "../middleware/auth.js";
+
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+router.get('/', authenticate, anyRole, async (req, res) => {
   const users = await getAllUsers();
   res.send(users);
 });
 
-router.get('/newCardId/:cardType', async (req, res) => {
+router.get('/newCardId/:cardType', authenticate, anyRole, async (req, res) => {
   try {
     const newCardId = await getNewCardId(+req.params.cardType);
     res.send({ cardId: newCardId });
@@ -19,12 +21,12 @@ router.get('/newCardId/:cardType', async (req, res) => {
   }
 });
 
-router.get('/usersWithMismatchedTotal', async (_, res) => {
+router.get('/usersWithMismatchedTotal', authenticate, anyRole, async (_, res) => {
   const usersWithMismatchedTotal = await getUsersWithMismatchedTotal();
   res.send(usersWithMismatchedTotal);
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', authenticate, anyRole, async (req, res) => {
   try {
     const id = req.params.id;
     const user = await getUser({ id });
@@ -34,7 +36,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.get('/card/:cardId', async (req, res) => {
+router.get('/card/:cardId', authenticate, anyRole,  async (req, res) => {
   try {
     const cardId = Number(req.params.cardId);
     const user = await getUser({ cardId });
@@ -44,7 +46,7 @@ router.get('/card/:cardId', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', authenticate, editorOrAdmin, async (req, res) => {
   try {
     if (!req.body.type) return res.status(400).send("Type is required");
     if (!req.body.name) return res.status(400).send("Name is required");
@@ -59,7 +61,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticate, editorOrAdmin, async (req, res) => {
   const id = req.params.id;
   try {
     const keysCanNotBeUpdated = ["id", "cardId", "type", "total"];
@@ -81,7 +83,7 @@ router.put('/:id', async (req, res) => {
 
 });
 
-router.put('/:cardId', async (req, res) => {
+router.put('/:cardId', authenticate, editorOrAdmin, async (req, res) => {
   const cardId = Number(req.params.cardId);
   try {
     const updatedUser = await updateUser({ cardId }, req.body);
@@ -100,7 +102,7 @@ router.put('/:cardId', async (req, res) => {
 
 
 // TODO: delete user will not delete it from the database it will just mark it as deleted
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticate, adminOnly, async (req, res) => {
   try {
     const id = req.params.id;
     const user = await User.findOneBy({ id });
@@ -116,7 +118,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 // TODO: delete user will not delete it from the database it will just mark it as deleted
-router.delete('/:cardId', async (req, res) => {
+router.delete('/:cardId', authenticate, adminOnly, async (req, res) => {
   try {
     const cardId = Number(req.params.cardId);
     const user = await User.findOneBy({ cardId });

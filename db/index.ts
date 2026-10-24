@@ -5,6 +5,8 @@ import cron from "node-cron";
 import backup from "../services/db-backup.js";
 import {sendWhatsAppMsg_API} from "../services/whatsapp.js";
 import { Bank } from "./entity/Bank.js";
+import { Employee, EmployeeRole } from "./entity/Employee.js";
+import bcrypt from "bcryptjs";
 
 async function insertDefaultData() {
   const defaultRecordTypes = [
@@ -67,6 +69,18 @@ async function insertDefaultData() {
       await newBank.save();
     }
   }
+
+const adminEmployee = await Employee.count();
+  if (adminEmployee === 0) {
+    const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD || "admin123";
+    const hashed = await bcrypt.hash(defaultPassword, 10);
+    const admin = new Employee();
+    admin.username = "admin";
+    admin.password = hashed;
+    admin.role = EmployeeRole.ADMIN;
+    await admin.save();
+    console.log("Default admin employee created — username: admin, password:", defaultPassword);
+  }
 }
 
 const initialize = () => {
@@ -82,7 +96,7 @@ const initialize = () => {
           await sendWhatsAppMsg_API("972566252561", 'Backup done');
         } catch (err) {
           console.error('Backup failed:', err);
-          await sendWhatsAppMsg_API("972566252561", 'Backup failed: ' + err);
+          await sendWhatsAppMsg_API("972566252561", 'Backup failed: ' + JSON.stringify(err));
         }
       });
       console.log("Cron job scheduled for backup.");

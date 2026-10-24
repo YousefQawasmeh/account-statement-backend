@@ -7,14 +7,15 @@ import {
     deleteReminder,
     sendRemindersToOverdueUsersByIds,
 } from '../controlers';
+import { authenticate, adminOnly, anyRole, editorOrAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get('/', getReminders);
-router.get('/:id', getReminder);
-router.post('/', createReminder);
-router.put('/:id', updateReminder);
-router.delete('/:id', deleteReminder);
-router.post('/sendRemindersToOverdueUsersByIds', sendRemindersToOverdueUsersByIds);
+router.get('/', authenticate, anyRole, getReminders);
+router.get('/:id', authenticate, anyRole, getReminder);
+router.post('/', authenticate, editorOrAdmin, createReminder);
+router.put('/:id', authenticate, editorOrAdmin, updateReminder);
+router.delete('/:id', authenticate, adminOnly, deleteReminder);
+router.post('/sendRemindersToOverdueUsersByIds', authenticate, editorOrAdmin, sendRemindersToOverdueUsersByIds);
 
 export default router;

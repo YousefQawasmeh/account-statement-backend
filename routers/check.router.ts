@@ -1,10 +1,11 @@
 import express from 'express';
 import { Check } from '../db/entity/Check.js';
 import { IsNull, Not } from 'typeorm';
+import { authenticate, adminOnly, anyRole, editorOrAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+router.get('/', authenticate, anyRole, async (req, res) => {
   const filters: any = {};
   if (req.query.available === 'true') {
     filters['available'] = true
@@ -16,7 +17,7 @@ router.get('/', async (req, res) => {
   res.send(responseChecks);
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', authenticate, anyRole, async (req, res) => {
   try {
     const id = Number(req.params.id);
     const check = await Check.findOne({ where: { id }, relations: ['fromRecord', 'bank', 'fromRecord.user', 'toRecord', 'toRecord.user'] });
@@ -26,7 +27,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', authenticate, editorOrAdmin, async (req, res) => {
   try {
     if (!req.body.amount) return res.status(400).send("Amount is required");
     if (!req.body.currency) return res.status(400).send("Currency is required");
@@ -46,7 +47,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticate, editorOrAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
     const check = await Check.findOne({ where: { id } });
@@ -62,12 +63,12 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.get('/deleted', async (_, res) => {
+router.get('/deleted', authenticate, adminOnly, async (_, res) => {
   const checks = await Check.find({ withDeleted: true, relations: ['fromRecord', 'bank', 'fromRecord.user', 'toRecord', 'toRecord.user'], where: { deletedAt: Not(IsNull()) } });
   res.send(checks);
 });
 
-router.get('/all', async (_, res) => {
+router.get('/all', authenticate, adminOnly, async (_, res) => {
   const checks = await Check.find({ withDeleted: true, relations: ['fromRecord', 'bank', 'fromRecord.user', 'toRecord', 'toRecord.user'] });
   res.send(checks);
 });

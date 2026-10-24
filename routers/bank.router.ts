@@ -1,14 +1,15 @@
 import express from 'express';
 import { Bank } from '../db/entity/Bank.js';
+import { authenticate, adminOnly, anyRole, editorOrAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get('/', async (_, res) => {
+router.get('/', authenticate, anyRole, async (_, res) => {
   const banks = await Bank.find();
   res.send(banks);
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', authenticate, anyRole, async (req, res) => {
   try {
     const id = Number(req.params.id);
     const bank = await Bank.findOne({ where: { id } });
@@ -18,7 +19,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', authenticate, adminOnly, async (req, res) => {
   try {
     const bank = new Bank();
     bank.id = req.body.id;
@@ -31,7 +32,7 @@ router.post('/', async (req, res) => {
 
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticate, editorOrAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
     const bank = await Bank.findOne({ where: { id } });
@@ -51,7 +52,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// router.delete('/:id', async (req, res) => {
+// router.delete('/:id', authenticate, adminOnly, async (req, res) => {
 //   try {
 //     const id = Number(req.params.id);
 //     const bank = await Bank.findOne({ where: { id } });
@@ -66,12 +67,12 @@ router.put('/:id', async (req, res) => {
 //   }
 // });
 
-// router.get('/deleted', async (_, res) => {
+// router.get('/deleted', authenticate, adminOnly, async (_, res) => {
 //   const banks = await Bank.find({ withDeleted: true });
 //   res.send(banks);
 // });
 
-// router.get('/all', async (_, res) => {
+// router.get('/all', authenticate, adminOnly, async (_, res) => {
 //   const banks = await Bank.find({ withDeleted: true });
 //   res.send(banks);
 // }); 

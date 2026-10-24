@@ -2,6 +2,7 @@ import express from 'express';
 import { Image } from '../db/entity/Image.js';
 import path from 'path';
 // import { In } from 'typeorm';
+import { authenticate, anyRole, editorOrAdmin } from "../middleware/auth.js";
 
 const imageRouter = express.Router();
 
@@ -11,7 +12,7 @@ const imageRouter = express.Router();
 //     res.send(images);
 // })
 
-imageRouter.get('/', async (req, res) => {
+imageRouter.get('/', authenticate, anyRole, async (req, res) => {
     const name = req.query.name as string;
     try {
         const image = await Image.findOne({ where: { name } });
@@ -27,7 +28,7 @@ imageRouter.get('/', async (req, res) => {
     }
 })
 
-imageRouter.delete('/:name', async (req, res) => {
+imageRouter.delete('/:name', authenticate, editorOrAdmin, async (req, res) => {
     const name = req.params.name;
     const image = await Image.findOne({ where: { name } });
     if (image) {
