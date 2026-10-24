@@ -1,7 +1,7 @@
 import express from 'express';
 import { UserType } from '../db/entity/UserType.js';
 import db from '../db/index.js';
-import { authenticate, adminOnly, anyRole, editorOrAdmin } from "../middleware/auth.js";
+import { authenticate, adminOnly, anyRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -40,7 +40,7 @@ router.post('/', authenticate, adminOnly, async (req, res) => {
   }
 });
 
-router.put('/:id', authenticate, editorOrAdmin, async (req, res) => {
+router.put('/:id', authenticate, adminOnly, async (req, res) => {
   const id = Number(req.params.id);
   const userType = await UserType.findOneBy({ id });
   if (userType) {
